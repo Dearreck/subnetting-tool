@@ -46,13 +46,13 @@ function calculateClassful(networkIp, requirement) {
 
     // 3. Calcular el nuevo prefijo basado en el requisito
     if (requirement.type === 'subnets') {
-        neededBits = bitsForSubnets(requirement.value);
+        neededBits = bitsForSubnets(requirement.value + 2);
         if (neededBits === -1) {
             return { success: false, data: null, error: `Imposible crear ${requirement.value} subredes.` };
         }
         newPrefix = defaultPrefix + neededBits;
     } else { // requirement.type === 'hosts'
-        neededBits = bitsForHosts(requirement.value);
+        neededBits = bitsForHosts(requirement.value + 2);
          if (neededBits === -1) {
             return { success: false, data: null, error: `Imposible alojar ${requirement.value} hosts utilizables por subred.` };
         }
