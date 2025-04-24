@@ -205,7 +205,7 @@ function calculateVLSM(networkIpWithPrefix, requirements) {
 
     for (let i = 0; i < sortedRequirements.length; i++) {
         const req = sortedRequirements[i];
-        const requiredHosts = req.hosts;
+        const requiredHosts = req.hosts + 2;
         const subnetName = req.name || `Subred ${i + 1}`;
 
         if (currentAvailableNetworkString === null) {
