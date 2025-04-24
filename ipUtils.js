@@ -117,7 +117,7 @@ function getPrefixLength(maskString) {
     // return count;
     // Mantengamos el bucle más claro por ahora:
     for (let i = 0; i < 32; i++) {
-        if ((maskCheck & 0x80000000) === 0x80000000) { // Verifica el bit más significativo
+        if ((maskCheck.toString(16) & 0x80000000) === 0x80000000) { // Verifica el bit más significativo
             prefix++;
             maskCheck <<= 1; // Desplaza a la izquierda para verificar el siguiente bit
         } else {
