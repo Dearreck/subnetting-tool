@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Herramienta de Subneteo CCNA</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.png"> </head>
+<body>
+    <header>
+        <h1>Herramienta de Subneteo IPv4 para CCNA 🎓</h1>
+        <nav>
+            <button id="btnCalculatorMode" class="tab-button active">Calculadora de Subneteo</button>
+            <button id="btnExerciseMode" class="tab-button">Generador de Ejercicios</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="calculatorMode" class="mode-content active">
+            <h2>Modo: Calculadora de Subneteo 🧮</h2>
+
+            <div class="calculator-options">
+                <label><input type="radio" name="calcType" value="classful" checked> Subneteo Classful</label>
+                <label><input type="radio" name="calcType" value="vlsm"> Subneteo Classless (VLSM)</label>
+            </div>
+
+            <form id="classfulForm" class="subnet-form active">
+                <h3>Subneteo Classful</h3>
+                <div class="form-group">
+                    <label for="classfulNetworkIp">Dirección IP de Red:</label>
+                    <input type="text" id="classfulNetworkIp" placeholder="Ej: 192.168.1.0" required>
+                    <span class="ip-info"></span> </div>
+                <div class="form-group requirement-options">
+                    <label>Requisito (elige uno):</label>
+                    <div>
+                        <input type="radio" id="reqSubnets" name="classfulRequirement" value="subnets" checked>
+                        <label for="reqSubnets">Número de Subredes:</label>
+                        <input type="number" id="numSubnets" min="2" placeholder="Mínimo 2">
+                    </div>
+                    <div>
+                        <input type="radio" id="reqHosts" name="classfulRequirement" value="hosts">
+                        <label for="reqHosts">Mínimo de Hosts por Subred:</label>
+                        <input type="number" id="numHosts" min="1" placeholder="Mínimo 1">
+                    </div>
+                </div>
+                <button type="submit">Calcular Subredes</button>
+            </form>
+
+            <form id="vlsmForm" class="subnet-form">
+                <h3>Subneteo Classless (VLSM)</h3>
+                <div class="form-group">
+                    <label for="vlsmNetworkIp">Dirección IP de Red/Prefijo:</label>
+                    <input type="text" id="vlsmNetworkIp" placeholder="Ej: 172.16.0.0/22" required>
+                </div>
+                <div class="form-group">
+                    <label>Requisitos de Hosts por Subred (ordenados de MAYOR a MENOR):</label>
+                    <div id="vlsmRequirements">
+                        <div class="vlsm-requirement">
+                            <input type="number" min="1" placeholder="Hosts" required>
+                            <input type="text" placeholder="Nombre (Opcional)">
+                            <button type="button" class="remove-req">-</button>
+                        </div>
+                    </div>
+                    <button type="button" id="addVlsmRequirement">Añadir Requisito (+)</button>
+                </div>
+                 <p class="warning"><strong>Importante:</strong> Introduce los requisitos de hosts en orden descendente (de mayor a menor).</p>
+                <button type="submit">Calcular Subredes VLSM</button>
+            </form>
+
+            <div id="calculatorResults" class="results-area">
+                <h3>Resultados del Cálculo:</h3>
+                <div id="calcSummary"></div> <div id="calcTableContainer">
+                    <p>Introduce los datos y haz clic en calcular.</p>
+                </div>
+                <div id="calcExplanation" style="margin-top: 15px; display: none;">
+                    <h4>Explicación del Método:</h4>
+                    <select id="calcExplanationMethod">
+                        <option value="magic">Magic Number</option>
+                        <option value="wildcard">Wildcard (Conceptual)</option>
+                    </select>
+                    <div id="explanationContent"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="exerciseMode" class="mode-content">
+            <h2>Modo: Generador de Ejercicios 📝</h2>
+
+            <div class="exercise-options">
+                <label for="exerciseType">Tipo de Subneteo:</label>
+                <select id="exerciseType">
+                    <option value="classful">Classful</option>
+                    <option value="vlsm">Classless (VLSM)</option>
+                </select>
+                <button id="generateExercise">Generar Nuevo Ejercicio</button>
+            </div>
+
+            <div id="exercisePrompt" class="exercise-area">
+                <h3>Problema:</h3>
+                <p>Haz clic en "Generar Nuevo Ejercicio".</p>
+            </div>
+
+            <div id="exerciseSolutionInput" class="exercise-area" style="display: none;">
+                <h3>Tu Solución:</h3>
+                <p>Completa los detalles para cada subred requerida:</p>
+                <div id="userAnswerTableContainer">
+                    </div>
+                 <div class="form-group" style="margin-top: 15px;">
+                    <label for="exerciseExplanationMethod">Método preferido para la explicación:</label>
+                    <select id="exerciseExplanationMethod">
+                        <option value="magic">Magic Number</option>
+                        <option value="wildcard">Wildcard (Conceptual)</option>
+                    </select>
+                 </div>
+                <button id="checkAnswer">Verificar Respuesta</button>
+            </div>
+
+            <div id="exerciseFeedback" class="exercise-area feedback" style="display: none;">
+                <h3>Feedback:</h3>
+                <p></p>
+            </div>
+
+            <div id="exerciseSolution" class="exercise-area" style="display: none;">
+                <h3>Solución Detallada:</h3>
+                 <div id="solutionExplanation"></div>
+                <div id="solutionTableContainer">
+                    </div>
+                 <button id="showSolutionSteps" style="margin-top: 10px;">Mostrar Pasos (Método Seleccionado)</button>
+                 <div id="solutionStepsContent" style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;"></div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; <span id="year"></span> - Herramienta de Subneteo CCNA | Diseñada como apoyo educativo.</p>
+    </footer>
+
+    <script src="ipUtils.js"></script>
+    <script src="subnetLogic.js"></script>
+    <script src="exerciseGenerator.js"></script>
+    <script src="uiController.js"></script>
+</body>
+</html>
