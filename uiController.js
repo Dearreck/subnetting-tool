@@ -724,6 +724,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZACIÓN ---
     updateFooterYear();
     switchMode('calculator'); // Iniciar en modo calculadora por defecto
-    switchCalculatorForm('classful'); // Mostrar formulario classful por defecto
+    switchCalculatorForm('vlsm'); // Mostrar formulario vlsm por defecto
 
 }); // Fin de DOMContentLoaded
