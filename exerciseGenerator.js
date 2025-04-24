@@ -177,7 +177,8 @@ function generateVLSMProblem(difficulty = 'medium') {
             const maxHosts = getUsableHosts(32 - hostBitsForReq);
              if (maxHosts <= 0) continue; // No pedir 0 hosts si es posible evitarlo
 
-            const requiredHosts = getRandomInt(1, maxHosts);
+            // Generar un valor de hosts requeridos entre 2 y el máximo usable para ese bloque
+            const requiredHosts = getRandomInt(2, maxHosts);
 
             // Heurística: Sumar el tamaño TOTAL del bloque necesario para estos hosts
              const hostBitsActuallyNeeded = bitsForHosts(requiredHosts);
