@@ -257,8 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Generar la fila HTML
             tableHTML += `
-                <tr${rowClass}> {/* Añadir la clase al TR si aplica */}
-                    <td>${subnet.name || '-'}${nameSuffix}</td> {/* Añadir sufijo al nombre si aplica */}
+                <tr${rowClass}> {}
+                    <td>${subnet.name || '-'}${nameSuffix}</td> {}
                     <td>${subnet.networkAddress}</td>
                     <td>${subnet.mask}</td>
                     <td>/${subnet.prefix}</td>
