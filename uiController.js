@@ -276,8 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr${rowClass}>
                     <td>${subnet.name || '-'}${nameSuffix}</td>
                     <td>${subnet.networkAddress}</td>
-                    ${isClassfulResult ? '' : `<td>${subnet.mask}</td>`} {/* Ocultar si Classful */}
-                    ${isClassfulResult ? '' : `<td>/${subnet.prefix}</td>`} {/* Ocultar si Classful */}
+                    ${isClassfulResult ? '' : `<td>${subnet.mask}</td>`}
+                    ${isClassfulResult ? '' : `<td>/${subnet.prefix}</td>`}
                     <td>${subnet.firstUsable ? `${subnet.firstUsable} - ${subnet.lastUsable}` : 'N/A'}</td>
                     <td>${subnet.broadcastAddress}</td>
                     ${isClassfulResult ? '' : `<td style="text-align: right;">${subnet.totalHosts.toLocaleString()}</td>`}
