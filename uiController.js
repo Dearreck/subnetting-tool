@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th>Broadcast</th>
                         <th>Hosts Totales</th>
                         <th>Hosts Usables</th>
-                        ${!isClassfulResult ? '<th>Hosts Pedidos</th>' : ''} {/* Mostrar solo si NO es Classful */}
+                        ${!isClassfulResult ? '<th>Hosts Pedidos</th>' : ''} {}
                     </tr>
                 </thead>
                 <tbody>
