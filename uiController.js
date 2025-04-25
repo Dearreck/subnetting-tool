@@ -208,6 +208,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const data = result.data;
+        // Determinar si es un resultado Classful (heurística: no tiene requestedHosts)
+        const isClassfulResult = data.length > 0 && data[0].requestedHosts === undefined;
+
+        // Añadir nota si es Classful y se muestran subredes especiales
+        if (isClassfulResult && data.length > 1) {
+             calcSummaryDiv.innerHTML += `<br><small style='color: #6c757d;'><i>Las filas resaltadas representan 'Subnet Zero' y 'All-Ones Subnet', históricamente no utilizadas.</i></small>`;
+        }
+        
         calcSummaryDiv.textContent = `Cálculo completado. Se generaron ${data.length} subred(es).`;
 
         let tableHTML = `
@@ -222,16 +230,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th>Broadcast</th>
                         <th>Hosts Totales</th>
                         <th>Hosts Usables</th>
-                        ${data[0].requestedHosts !== undefined ? '<th>Hosts Pedidos</th>' : ''}
+                        ${!isClassfulResult ? '<th>Hosts Pedidos</th>' : ''} {/* Mostrar solo si NO es Classful */}
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        data.forEach(subnet => {
+        data.forEach((subnet, index) => {
+            let rowClass = ''; // Inicializar clase vacía
+            let nameSuffix = ''; // Inicializar sufijo de nombre vacío
+
+            // Aplicar clase y sufijo SOLO si es resultado Classful, hay > 1 subred, y es la primera o última
+            if (isClassfulResult && data.length > 1) {
+                 if (index === 0) { // Primera fila (Subnet Zero)
+                    rowClass = ' class="subnet-zero-or-all-ones"';
+                    nameSuffix = ' <span class="subnet-label">(Subnet Zero)</span>';
+                 } else if (index === data.length - 1) { // Última fila (All-Ones)
+                     rowClass = ' class="subnet-zero-or-all-ones"';
+                     nameSuffix = ' <span class="subnet-label">(All-Ones)</span>';
+                 }
+            }
+
+            // Generar la fila HTML
             tableHTML += `
-                <tr>
-                    <td>${subnet.name || '-'}</td>
+                <tr${rowClass}> {/* Añadir la clase al TR si aplica */}
+                    <td>${subnet.name || '-'}${nameSuffix}</td> {/* Añadir sufijo al nombre si aplica */}
                     <td>${subnet.networkAddress}</td>
                     <td>${subnet.mask}</td>
                     <td>/${subnet.prefix}</td>
@@ -239,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${subnet.broadcastAddress}</td>
                     <td style="text-align: right;">${subnet.totalHosts.toLocaleString()}</td>
                     <td style="text-align: right;">${subnet.usableHosts.toLocaleString()}</td>
-                     ${subnet.requestedHosts !== undefined ? `<td style="text-align: right;">${subnet.requestedHosts.toLocaleString()}</td>` : ''}
+                     ${!isClassfulResult ? `<td style="text-align: right;">${subnet.requestedHosts.toLocaleString()}</td>` : ''} {/* Mostrar solo si NO es classful */}
                 </tr>
             `;
         });
