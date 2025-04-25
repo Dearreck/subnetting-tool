@@ -211,13 +211,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Determinar si es un resultado Classful (heurística: no tiene requestedHosts)
         const isClassfulResult = data.length > 0 && data[0].requestedHosts === undefined;
 
-        // Añadir nota si es Classful y se muestran subredes especiales
-        if (isClassfulResult && data.length > 1) {
-             calcSummaryDiv.innerHTML += `<br><small style='color: #6c757d;'><i>Las filas resaltadas representan 'Subnet Zero' y 'All-Ones Subnet', históricamente no utilizadas.</i></small>`;
-        }
-        
-        calcSummaryDiv.textContent = `Cálculo completado. Se generaron ${data.length} subred(es).`;
+        // Construir el HTML completo para el resumen
+        let summaryHTML = `Cálculo completado. Se generaron ${data.length} subred(es).`;
 
+        // Añadir la nota DEBAJO si es Classful y aplica
+        if (isClassfulResult && data.length > 1) {
+             summaryHTML += `<br><small style='color: #6c757d;'><i>Las filas resaltadas representan 'Subnet Zero' y 'All-Ones Subnet', históricamente no utilizadas.</i></small>`;
+        }
+
+        // Asignar el HTML construido al div de resumen UNA SOLA VEZ
+        calcSummaryDiv.innerHTML = summaryHTML;
+        
         let tableHTML = `
             <table>
                 <thead>
