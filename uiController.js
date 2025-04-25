@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${subnet.broadcastAddress}</td>
                     <td style="text-align: right;">${subnet.totalHosts.toLocaleString()}</td>
                     <td style="text-align: right;">${subnet.usableHosts.toLocaleString()}</td>
-                     ${!isClassfulResult ? `<td style="text-align: right;">${subnet.requestedHosts.toLocaleString()}</td>` : ''} {/* Mostrar solo si NO es classful */}
+                     ${!isClassfulResult ? `<td style="text-align: right;">${subnet.requestedHosts.toLocaleString()}</td>` : ''} {}
                 </tr>
             `;
         });
