@@ -211,29 +211,45 @@ document.addEventListener('DOMContentLoaded', () => {
         // Determinar si es un resultado Classful (heurística: no tiene requestedHosts)
         const isClassfulResult = data.length > 0 && data[0].requestedHosts === undefined;
 
-        // Construir el HTML completo para el resumen
+        // --- Construcción del Resumen ---
         let summaryHTML = `Cálculo completado. Se generaron ${data.length} subred(es).`;
+        let commonMask = '';
+        let commonPrefix = '';
+        let commonTotalHosts = '';
+        let commonUsableHosts = '';
 
-        // Añadir la nota DEBAJO si es Classful y aplica
-        if (isClassfulResult && data.length > 1) {
-             summaryHTML += `<br><small style='color: #6c757d;'><i>Las filas resaltadas representan 'Subnet Zero' y 'All-Ones Subnet', históricamente no utilizadas.</i></small>`;
+        // Añadir información común y nota SOLO si es Classful
+        if (isClassfulResult) {
+            // Extraer valores comunes del primer resultado (son iguales para todos en classful)
+            commonMask = data[0].mask;
+            commonPrefix = data[0].prefix;
+            commonTotalHosts = data[0].totalHosts.toLocaleString(); // Formatear número
+            commonUsableHosts = data[0].usableHosts.toLocaleString(); // Formatear número
+
+            // Añadir al resumen
+            summaryHTML += `<br><span class="common-info">Máscara común: ${commonMask} (/${commonPrefix}) | Hosts Usables p/Subred: ${commonUsableHosts} (Total: ${commonTotalHosts})</span>`;
+
+            // Añadir nota sobre filas resaltadas si hay más de una subred
+            if (data.length > 1) {
+                summaryHTML += `<br><small style='color: #6c757d;'><i>Las filas resaltadas representan 'Subnet Zero' y 'All-Ones Subnet', históricamente no utilizadas.</i></small>`;
+            }
         }
-
-        // Asignar el HTML construido al div de resumen UNA SOLA VEZ
+        // Asignar el HTML construido al div de resumen
         calcSummaryDiv.innerHTML = summaryHTML;
-        
+
+         // --- Construcción de la Tabla ---
         let tableHTML = `
             <table>
                 <thead>
                     <tr>
                         <th>Nombre</th>
                         <th>Dir. Red</th>
-                        <th>Máscara</th>
-                        <th>Prefijo</th>
+                        ${isClassfulResult ? '' : '<th>Máscara</th>'}
+                        ${isClassfulResult ? '' : '<th>Prefijo</th>'}
                         <th>Rango Usable</th>
                         <th>Broadcast</th>
-                        <th>Hosts Totales</th>
-                        <th>Hosts Usables</th>
+                        ${isClassfulResult ? '' : '<th>Hosts Totales</th>'}
+                        ${isClassfulResult ? '' : '<th>Hosts Usables</th>'}
                         ${!isClassfulResult ? '<th>Hosts Pedidos</th>' : ''}
                     </tr>
                 </thead>
@@ -241,8 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         data.forEach((subnet, index) => {
-            let rowClass = ''; // Inicializar clase vacía
-            let nameSuffix = ''; // Inicializar sufijo de nombre vacío
+            let rowClass = '';
+            let nameSuffix = '';
 
             // Aplicar clase y sufijo SOLO si es resultado Classful, hay > 1 subred, y es la primera o última
             if (isClassfulResult && data.length > 1) {
@@ -255,17 +271,17 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
             }
 
-            // Generar la fila HTML
+            // Generar la fila HTML, omitiendo celdas si es Classful
             tableHTML += `
                 <tr${rowClass}>
                     <td>${subnet.name || '-'}${nameSuffix}</td>
                     <td>${subnet.networkAddress}</td>
-                    <td>${subnet.mask}</td>
-                    <td>/${subnet.prefix}</td>
+                    ${isClassfulResult ? '' : `<td>${subnet.mask}</td>`} {/* Ocultar si Classful */}
+                    ${isClassfulResult ? '' : `<td>/${subnet.prefix}</td>`} {/* Ocultar si Classful */}
                     <td>${subnet.firstUsable ? `${subnet.firstUsable} - ${subnet.lastUsable}` : 'N/A'}</td>
                     <td>${subnet.broadcastAddress}</td>
-                    <td style="text-align: right;">${subnet.totalHosts.toLocaleString()}</td>
-                    <td style="text-align: right;">${subnet.usableHosts.toLocaleString()}</td>
+                    ${isClassfulResult ? '' : `<td style="text-align: right;">${subnet.totalHosts.toLocaleString()}</td>`}
+                    ${isClassfulResult ? '' : `<td style="text-align: right;">${subnet.usableHosts.toLocaleString()}</td>`}
                      ${!isClassfulResult ? `<td style="text-align: right;">${subnet.requestedHosts.toLocaleString()}</td>` : ''}
                 </tr>
             `;
