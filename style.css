@@ -263,6 +263,29 @@ tbody tr:nth-child(odd) {
     border-radius: 3px;
 }
 
+/* Estilo para subredes Classful históricamente no utilizables (zero y all-ones) */
+tr.subnet-zero-or-all-ones {
+    background-color: #fff3cd; /* Amarillo pálido (similar a advertencia) */
+    /* Otras opciones: */
+    /* background-color: #eeeeee; */ /* Gris claro */
+    /* background-color: #f8d7da; */ /* Rojo pálido */
+    font-style: italic; /* Opcional: texto en cursiva */
+}
+
+/* Asegurar que el resaltado sobreescriba estilos de filas alternas si los usas */
+tbody tr.subnet-zero-or-all-ones:nth-child(odd),
+tbody tr.subnet-zero-or-all-ones:nth-child(even) {
+    background-color: #fff3cd; /* Mantener el mismo color de resaltado */
+}
+
+/* Estilo para la etiqueta de texto (Subnet Zero / All-Ones) */
+.subnet-label {
+    font-size: 0.85em;
+    color: #6c757d; /* Texto gris */
+    margin-left: 5px;
+    font-style: normal; /* Quitar cursiva si la fila la tiene */
+}
+
 .feedback {
     border-left: 5px solid #ffc107; /* Amarillo por defecto */
     padding-left: 15px;
