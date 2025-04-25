@@ -94,7 +94,6 @@ main {
     padding: 5px 10px;
 }
 
-
 .subnet-form {
     display: none; /* Ocultos por defecto */
     margin-top: 1rem;
@@ -185,7 +184,6 @@ main {
     cursor: pointer;
     margin-top: 5px;
 }
-
 
 button[type="submit"], #checkAnswer, #generateExercise, #showSolutionSteps {
     background-color: #007bff;
@@ -284,6 +282,15 @@ tbody tr.subnet-zero-or-all-ones:nth-child(even) {
     color: #6c757d; /* Texto gris */
     margin-left: 5px;
     font-style: normal; /* Quitar cursiva si la fila la tiene */
+}
+
+/* Estilo para la información común mostrada en el resumen */
+.common-info {
+    display: block; /* Para que aparezca en su propia línea */
+    font-size: 0.95em;
+    color: #333; /* O un color ligeramente menos prominente como #555 */
+    margin-top: 8px;
+    font-weight: bold;
 }
 
 .feedback {
