@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th>Broadcast</th>
                         <th>Hosts Totales</th>
                         <th>Hosts Usables</th>
-                        ${!isClassfulResult ? '<th>Hosts Pedidos</th>' : ''} {}
+                        ${!isClassfulResult ? '<th>Hosts Pedidos</th>' : ''}
                     </tr>
                 </thead>
                 <tbody>
@@ -257,8 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Generar la fila HTML
             tableHTML += `
-                <tr${rowClass}> //{}
-                    <td>${subnet.name || '-'}${nameSuffix}</td> //{}
+                <tr${rowClass}>
+                    <td>${subnet.name || '-'}${nameSuffix}</td>
                     <td>${subnet.networkAddress}</td>
                     <td>${subnet.mask}</td>
                     <td>/${subnet.prefix}</td>
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${subnet.broadcastAddress}</td>
                     <td style="text-align: right;">${subnet.totalHosts.toLocaleString()}</td>
                     <td style="text-align: right;">${subnet.usableHosts.toLocaleString()}</td>
-                     ${!isClassfulResult ? `<td style="text-align: right;">${subnet.requestedHosts.toLocaleString()}</td>` : ''} //{}
+                     ${!isClassfulResult ? `<td style="text-align: right;">${subnet.requestedHosts.toLocaleString()}</td>` : ''}
                 </tr>
             `;
         });
