@@ -461,11 +461,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Muestra la tabla con la solución correcta del ejercicio.
+     * Muestra la tabla con la solución correcta del ejercicio y los controles de explicación.
      * @param {object[]} correctSolution - La solución correcta.
      */
     function displaySolution(correctSolution) {
-        // Implementación de displaySolution (sin cambios, genera la tabla)
         if (!correctSolution) {
             solutionTableContainer.innerHTML = '<p>No hay solución disponible para mostrar.</p>';
             return;
@@ -496,7 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tbody>
             `;
             data.forEach(subnet => {
-                 // Reutilizar la lógica de formato de displayCalculatorResults pero sin resaltado/sufijos
                 tableHTML += `
                     <tr>
                         <td>${subnet.name || '-'}</td>
