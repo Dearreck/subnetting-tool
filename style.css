@@ -139,7 +139,7 @@ main {
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 1em;
-    max-width: 350px; /* Limitar ancho */
+    max-width: 350px; /* Limitar ancho general */
     box-sizing: border-box; /* Incluir padding/border */
 }
 .form-group input[type="number"]{
@@ -387,16 +387,19 @@ tr.subnet-zero-or-all-ones {
     margin-right: 5px;
     font-weight: normal; /* No tan fuerte como otras labels */
 }
-/* Estilos específicos para el SELECT dentro de los controles de explicación */
+/* --- ESTILOS MEJORADOS PARA EL SELECT DE EXPLICACIÓN --- */
 .explanation-controls select#exerciseExplanationMethod {
     /* Hereda estilos base de .form-group select */
     padding: 8px 30px 8px 12px; /* Ajustar padding vertical y derecho para flecha */
     font-size: 1em; /* Ajustar tamaño de fuente si es necesario */
-    max-width: 200px; /* Limitar ancho del select */
     height: auto; /* Permitir que el padding defina la altura */
     line-height: normal; /* Asegurar altura de línea normal */
     vertical-align: middle; /* Alinear con el botón */
     cursor: pointer;
+    /* Eliminar ancho máximo y establecer ancho automático */
+    max-width: none; /* Quitar el límite de ancho */
+    width: auto;     /* Permitir que el contenido determine el ancho */
+    min-width: 150px; /* Establecer un ancho mínimo razonable */
 }
 /* Estilo específico para el botón Mostrar Pasos en este contenedor */
 .explanation-controls button#showSolutionSteps {
