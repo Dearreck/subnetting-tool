@@ -1,6 +1,7 @@
 /**
  * exerciseGenerator.js - Lógica para generar ejercicios de subneteo aleatorios.
  * Utiliza las funciones de ipUtils.js y subnetLogic.js (deben estar cargadas previamente).
+ * La lógica Classful asume la perspectiva histórica (subnet zero/all-ones no usables).
  */
 
 /**
@@ -12,31 +13,25 @@
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
-    // Asegurarse de que min no sea mayor que max después del redondeo
-    if (min > max) {
-        [min, max] = [max, min]; // Intercambiar si es necesario
-    }
-    // Manejar caso donde min y max son iguales
-    if (min === max) {
-        return min;
-    }
-    // Asegurar que max es al menos min antes de calcular el rango
-    if (max < min) max = min;
+    if (min > max) { [min, max] = [max, min]; }
+    if (min === max) { return min; }
+    if (max < min) max = min; // Asegurar que max es al menos min
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /**
- * Genera un problema de subneteo Classful aleatorio.
- * Limita la solicitud máxima de subredes a ~25 y el número MÁXIMO de subredes RESULTANTES a 25.
- * EVITA generar problemas donde el subneteo resulte ÚNICAMENTE en la subred zero y all-ones.
+ * Genera un problema de subneteo Classful aleatorio bajo la perspectiva histórica.
+ * - Si se pide por hosts, asegura que resulten al menos 4 subredes totales.
+ * - Si se pide por subredes (N), calcula para N+2 subredes totales.
+ * - Limita el número MÁXIMO de subredes utilizables resultantes a ~25.
  *
- * @param {string} difficulty - Nivel de dificultad ('easy', 'medium', 'hard'). Actualmente no implementado.
- * @returns {{problemStatement: string, problemData: object, solution: object[]}|null} - Objeto con el enunciado, datos crudos del problema y la solución, o null si falla la generación.
+ * @param {string} difficulty - Nivel de dificultad ('easy', 'medium', 'hard'). No implementado.
+ * @returns {{problemStatement: string, problemData: object, solution: object[]}|null} - Objeto con el problema y la solución, o null si falla.
  */
 function generateClassfulProblem(difficulty = 'medium') {
     let attempts = 0;
-    const maxAttempts = 25; // Aumentar intentos por las validaciones
-    const maxResultingSubnets = 25; // Límite de subredes que se mostrarán
+    const maxAttempts = 30; // Más intentos por validaciones estrictas
+    const maxUsableResultingSubnets = 25; // Límite de subredes UTILIZABLES que queremos generar
 
     while (attempts < maxAttempts) {
         attempts++;
@@ -46,77 +41,79 @@ function generateClassfulProblem(difficulty = 'medium') {
         const maxAllowedPrefix = 30; // Límite para tener hosts usables estándar
 
         // 1. Generar Red Base Aleatoria (Privada)
-        const classChoice = getRandomInt(1, 3); // 1=C, 2=B, 3=A (Favorecer C/B)
-        if (classChoice === 1) { // Clase C
-            ipClass = 'C';
-            defaultPrefix = 24;
-            baseIp = `192.168.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
-        } else if (classChoice === 2) { // Clase B
-            ipClass = 'B';
-            defaultPrefix = 16;
-            baseIp = `172.${getRandomInt(16, 31)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
-        } else { // Clase A
-            ipClass = 'A';
-            defaultPrefix = 8;
-            baseIp = `10.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
-        }
-
-        // Obtener dirección de red real y máscara por defecto
+        const classChoice = getRandomInt(1, 3);
+        if (classChoice === 1) { ipClass = 'C'; defaultPrefix = 24; baseIp = `192.168.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`; }
+        else if (classChoice === 2) { ipClass = 'B'; defaultPrefix = 16; baseIp = `172.${getRandomInt(16, 31)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`; }
+        else { ipClass = 'A'; defaultPrefix = 8; baseIp = `10.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`; }
         const defaultMask = getDefaultMask(baseIp);
-         if (!defaultMask) {
-             // console.log(`Classful Gen Attempt ${attempts}: No se pudo obtener máscara default para ${baseIp}`);
-             continue;
-         }
+        if (!defaultMask) continue;
         const networkAddress = getNetworkAddress(baseIp, defaultMask);
-        if (!networkAddress) {
-            // console.log(`Classful Gen Attempt ${attempts}: No se pudo obtener red base para ${baseIp}/${defaultPrefix}`);
-            continue;
-        }
+        if (!networkAddress) continue;
 
         // 2. Generar Requisito Aleatorio (Subredes o Hosts)
         const requirementType = Math.random() < 0.5 ? 'subnets' : 'hosts';
         let requirementValue = 0;
+        let resultingPrefix; // Prefijo que resultará del requisito
+        let subnetBitsBorrowed; // Bits que se tomarán prestados
+        let numGeneratedSubnets; // Subredes totales que se generarán
 
         if (requirementType === 'subnets') {
-            // --- Lógica para limitar subredes SOLICITADAS ---
+            // --- Requisito por Subredes (UTILIZABLES) ---
             const availableSubnetBits = maxAllowedPrefix - defaultPrefix;
-            const neededBitsForMaxRequest = bitsForSubnets(maxResultingSubnets); // Usar el límite final aquí también
+            // Necesitamos al menos 2 bits prestados para tener >= 2 subredes utilizables (4 totales)
+            if (availableSubnetBits < 2) continue;
 
-            const maxBitsToBorrowForExercise = Math.min(availableSubnetBits, neededBitsForMaxRequest);
+            // Calcular bits máx para no exceder el límite de usables (~25)
+            // Max total = 25 usables + 2 = 27 -> bitsForSubnets(27) = 5
+            const neededBitsForMaxUsable = bitsForSubnets(maxUsableResultingSubnets + 2); // = 5
+            const maxBitsToBorrow = Math.min(availableSubnetBits, neededBitsForMaxUsable);
 
-            if (maxBitsToBorrowForExercise < 1) {
-                // console.log(`Classful Gen Attempt ${attempts}: No hay suficientes bits disponibles en /${defaultPrefix} para crear >= 2 subredes (max ${maxResultingSubnets}).`);
-                continue;
-            }
+            // Elegir bits a tomar prestados (entre 2 y el máximo)
+            subnetBitsToUse = getRandomInt(2, maxBitsToBorrow);
+            resultingPrefix = defaultPrefix + subnetBitsToUse;
+            numGeneratedSubnets = Math.pow(2, subnetBitsToUse);
+            const maxUsableSubnetsPossible = numGeneratedSubnets - 2;
 
-            const subnetBitsToUse = getRandomInt(1, maxBitsToBorrowForExercise);
-            const maxSubnetsPossibleWithBits = Math.pow(2, subnetBitsToUse);
-            const maxSubnetsToRequest = Math.min(maxSubnetsPossibleWithBits, maxResultingSubnets);
-            const minSubnetsToRequest = 2;
-
-            if (maxSubnetsToRequest < minSubnetsToRequest) continue;
-            requirementValue = getRandomInt(minSubnetsToRequest, maxSubnetsToRequest);
+            // Generar el valor del requisito (subredes UTILIZABLES a pedir)
+            // Pedir entre 1 y el máximo de usables posible con esos bits
+            requirementValue = getRandomInt(1, maxUsableSubnetsPossible);
+            subnetBitsBorrowed = subnetBitsToUse; // Guardar los bits usados
 
         } else { // requirementType === 'hosts'
-            // --- Lógica para requisitos de hosts ---
+            // --- Requisito por Hosts Utilizables ---
             const availableHostBits = 32 - defaultPrefix;
-            if (availableHostBits <= 2) {
-                 // console.log(`Classful Gen Attempt ${attempts}: No hay suficientes bits de host en /${defaultPrefix} para subnetear y tener hosts usables.`);
-                 continue;
-            }
-            const hostBitsToUse = getRandomInt(2, availableHostBits - 1);
-            const maxHostsForBits = getUsableHosts(32 - hostBitsToUse);
-            if (maxHostsForBits < 2) {
-                // console.log(`Classful Gen Attempt ${attempts}: Los bits de host elegidos (${hostBitsToUse}) no permiten >= 2 hosts usables.`);
+            // Necesitamos dejar al menos 2 bits para hosts (/30) y tomar prestados al menos 2 bits para subredes (>=4 totales)
+            if (availableHostBits <= 3) continue; // No hay espacio para >=2 bits de subred y >=2 bits de host
+
+            // Elegir bits de host a dejar (entre 2 y availableHostBits - 2)
+            const hostBitsToUse = getRandomInt(2, availableHostBits - 2);
+            resultingPrefix = 32 - hostBitsToUse;
+            subnetBitsBorrowed = resultingPrefix - defaultPrefix; // Bits que se tomaron
+            numGeneratedSubnets = Math.pow(2, subnetBitsBorrowed);
+
+            // Validar que se generen al menos 4 subredes totales
+            if (numGeneratedSubnets < 4) {
+                // console.log(`Classful Gen Attempt ${attempts}: Req hosts -> ${hostBitsToUse} bits host -> ${numGeneratedSubnets} subredes totales (<4).`);
                 continue;
             }
-            requirementValue = getRandomInt(2, maxHostsForBits); // Mínimo 2 hosts
+             // Validar que no exceda el límite de usables
+             if ((numGeneratedSubnets - 2) > maxUsableResultingSubnets) {
+                 // console.log(`Classful Gen Attempt ${attempts}: Req hosts -> ${numGeneratedSubnets} subredes totales -> ${numGeneratedSubnets-2} usables (> ${maxUsableResultingSubnets}).`);
+                 continue;
+             }
+
+            // Calcular hosts usables para este tamaño de bloque
+            const maxHostsForBits = getUsableHosts(resultingPrefix);
+            if (maxHostsForBits < 2) continue; // Seguridad
+
+            // Pedir entre 2 y el máximo de hosts usables
+            requirementValue = getRandomInt(2, maxHostsForBits);
         }
 
-        // Verificar requisito generado
-        if (requirementValue <= 0) continue;
+        // Verificar requisito y prefijo finales
+        if (requirementValue <= 0 || resultingPrefix < defaultPrefix || resultingPrefix > 30) continue;
 
-        // Crear objeto del problema preliminar
+        // Crear objeto del problema
         const problem = {
             network: networkAddress,
             requirement: {
@@ -125,208 +122,92 @@ function generateClassfulProblem(difficulty = 'medium') {
             }
         };
 
-        // --- VALIDACIONES ADICIONALES ---
-        // Calcular prefijo resultante
-        let resultingPrefix;
-        if (problem.requirement.type === 'subnets') {
-            const neededSubnetBits = bitsForSubnets(problem.requirement.value);
-            if (neededSubnetBits === -1) continue;
-            resultingPrefix = defaultPrefix + neededSubnetBits;
-        } else { // type === 'hosts'
-            const neededHostBits = bitsForHosts(problem.requirement.value);
-            if (neededHostBits === -1) continue;
-            resultingPrefix = 32 - neededHostBits;
-        }
-
-        // Validar prefijo resultante
-        if (resultingPrefix < defaultPrefix || resultingPrefix > 32) {
-            // console.log(`Classful Gen Attempt ${attempts}: Prefijo resultante inválido (${resultingPrefix})`);
-            continue;
-        }
-        if (problem.requirement.type === 'hosts' && problem.requirement.value > 0 && resultingPrefix > 30) {
-             // console.log(`Classful Gen Attempt ${attempts}: Prefijo resultante ${resultingPrefix} no permite hosts usables.`);
-             continue;
-        }
-
-        // Calcular subredes generadas
-        const subnetBitsBorrowed = resultingPrefix - defaultPrefix;
-        if (subnetBitsBorrowed < 0) continue; // Seguridad
-        const numGeneratedSubnets = Math.pow(2, subnetBitsBorrowed);
-
-        // ¡LA COMPROBACIÓN CLAVE! Limitar el número de subredes que RESULTARÍAN
-        if (numGeneratedSubnets > maxResultingSubnets) {
-            // console.log(`Classful Gen Attempt ${attempts}: Se generarían ${numGeneratedSubnets} subredes (límite ${maxResultingSubnets}). Regenerando.`);
-            continue;
-        }
-        // *** NUEVA VALIDACIÓN: Evitar caso problemático de solo 2 subredes ***
-        // Solo aplica si realmente se tomaron bits prestados (subnetBitsBorrowed > 0)
-        if (subnetBitsBorrowed > 0 && numGeneratedSubnets === 2) {
-            // console.log(`Classful Gen Attempt ${attempts}: Evitando caso de solo 2 subredes (zero/all-ones).`);
-            continue; // Generar otro problema
-        }
-        // --- FIN VALIDACIONES ADICIONALES ---
-
-
-        // 3. Calcular Solución y Validar (Solo si pasó las validaciones anteriores)
+        // 3. Calcular Solución y Validar
+        // La función calculateClassful ya genera TODAS las subredes (incluyendo zero/all-ones)
         const calculationResult = calculateClassful(problem.network, problem.requirement);
 
-        // Si el cálculo fue exitoso y produjo datos
+        // Validar si el cálculo fue exitoso y generó el número esperado de subredes TOTALES
         if (calculationResult.success && calculationResult.data && calculationResult.data.length > 0) {
+             const expectedNumSubnets = (subnetBitsBorrowed === 0) ? 1 : numGeneratedSubnets;
+             if (calculationResult.data.length !== expectedNumSubnets) {
+                 console.warn(`Classful Gen: Discrepancia - Esperadas Totales: ${expectedNumSubnets}, Solución tiene: ${calculationResult.data.length}`);
+                 continue; // Algo falló en el cálculo, reintentar
+             }
+
             // Formatear el problema para el usuario
             let problemText = `Subnetea la red ${problem.network} (Clase ${ipClass}, máscara por defecto ${defaultMask}) `;
             if(problem.requirement.type === 'subnets') {
-                problemText += `para crear al menos ${problem.requirement.value} subredes.`;
+                // Indicar que se piden subredes UTILIZABLES
+                problemText += `para obtener al menos ${problem.requirement.value} subredes utilizables (asumiendo que subnet zero y all-ones no se usan para hosts).`;
             } else {
-                 problemText += `de forma que cada subred pueda alojar al menos ${problem.requirement.value} hosts utilizables.`;
-            }
-
-            // Sanity check: comparar número esperado vs real (manejar caso base sin subneteo)
-            const expectedNumSubnets = (subnetBitsBorrowed === 0) ? 1 : numGeneratedSubnets;
-            if (calculationResult.data.length !== expectedNumSubnets) {
-                 console.warn(`Classful Gen: Discrepancia - Esperadas: ${expectedNumSubnets}, Solución tiene: ${calculationResult.data.length}`);
-                 // Podríamos decidir continuar o no aquí, por ahora continuaremos.
+                 problemText += `de forma que cada subred pueda alojar al menos ${problem.requirement.value} hosts utilizables (asumiendo que subnet zero y all-ones no se usan para hosts).`;
             }
 
             return {
                 problemStatement: problemText,
                 problemData: problem, // Datos crudos para validación interna
-                solution: calculationResult.data
+                solution: calculationResult.data // La solución contiene TODAS las subredes generadas
             };
         }
-        // Si falló el cálculo (después de pasar la validación de # subredes), registrar y reintentar
-        // console.log(`Intento ${attempts} fallido para Classful (después de validación #subredes): ${calculationResult.error || 'Resultado vacío'}`);
+        // Si falló el cálculo, registrar (opcional) y continuar el bucle while
+        // console.log(`Intento ${attempts} fallido para Classful (Histórico): ${calculationResult.error || 'Resultado vacío'}`);
 
     } // fin while
 
-    console.error("GENERATOR: No se pudo generar un problema Classful válido después de varios intentos.");
+    console.error("GENERATOR: No se pudo generar un problema Classful (Histórico) válido después de varios intentos.");
     return null; // Falló la generación
 }
 
 
-/**
- * Genera un problema de subneteo VLSM aleatorio.
- * Limita el número de requisitos (2-5) y los hosts máximos por requisito (~1000).
- *
- * @param {string} difficulty - Nivel de dificultad ('easy', 'medium', 'hard'). Actualmente no implementado.
- * @returns {{problemStatement: string, problemData: object, solution: object[]}|null} - Objeto con el problema y la solución, o null si falla.
- */
+// --- La función generateVLSMProblem permanece igual que en la v3 ---
 function generateVLSMProblem(difficulty = 'medium') {
     let attempts = 0;
-    const maxAttempts = 25; // VLSM puede fallar más a menudo por alineación o espacio
+    const maxAttempts = 25;
 
     while (attempts < maxAttempts) {
         attempts++;
-
-        // 1. Generar Bloque Inicial Aleatorio (Privado y con tamaño razonable)
-        const startPrefix = getRandomInt(16, 26); // Prefijos iniciales comunes para ejercicios: /16 a /26
+        const startPrefix = getRandomInt(16, 26);
         let baseIp = '';
-        const classChoice = getRandomInt(1, 3); // 1=C, 2=B, 3=A
-        if (classChoice === 1) { // Usar rangos menos comunes de C
-            baseIp = `192.168.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
-        } else if (classChoice === 2) { // Rango completo B privado
-             baseIp = `172.${getRandomInt(16, 31)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
-        } else { // Rango completo A privado
-             baseIp = `10.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
-        }
-
-        // Asegurar que es la dirección de red para el prefijo elegido
+        const classChoice = getRandomInt(1, 3);
+        if (classChoice === 1) { baseIp = `192.168.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`; }
+        else if (classChoice === 2) { baseIp = `172.${getRandomInt(16, 31)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`; }
+        else { baseIp = `10.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`; }
         const networkAddress = getNetworkAddress(baseIp, startPrefix);
-        if (!networkAddress) {
-            // console.log(`VLSM Gen Attempt ${attempts}: No se pudo obtener red para ${baseIp}/${startPrefix}`);
-            continue; // Intentar de nuevo si hay fallo
-        }
-
+        if (!networkAddress) continue;
         const startCIDR = `${networkAddress}/${startPrefix}`;
         const totalAvailableAddresses = getTotalHosts(startPrefix);
-
-        // 2. Generar Requisitos de Hosts Aleatorios
-        // Limitar número de requisitos y hosts max por requisito
-        const numRequirements = getRandomInt(2, 5); // Pedir entre 2 y 5 subredes
-        const maxHostsToRequestPerReq = 1000; // Límite máximo de hosts a pedir por requisito individual
+        const numRequirements = getRandomInt(2, 5);
+        const maxHostsToRequestPerReq = 1000;
         const requirements = [];
-        let totalAddressesNeededHeuristic = 0; // Suma de tamaños de bloque (2^N)
-
+        let totalAddressesNeededHeuristic = 0;
         for (let i = 0; i < numRequirements; i++) {
-            const maxHostBitsAvailable = 32 - startPrefix; // Bits disponibles en el bloque padre
-            if (maxHostBitsAvailable < 2) break; // No se puede subnetear más para hosts usables (/30 min)
-
-            // Elegir tamaño de bloque aleatorio (en bits de host), mínimo 2 bits (/30)
-            // Restringir un poco para no usar siempre el bloque más grande posible
-            const hostBitsForReq = getRandomInt(2, maxHostBitsAvailable - getRandomInt(0, Math.min(maxHostBitsAvailable - 2, 4))); // Deja margen
+            const maxHostBitsAvailable = 32 - startPrefix;
+            if (maxHostBitsAvailable < 2) break;
+            const hostBitsForReq = getRandomInt(2, maxHostBitsAvailable - getRandomInt(0, Math.min(maxHostBitsAvailable - 2, 4)));
             const usableHostsForBlock = getUsableHosts(32 - hostBitsForReq);
-
-            if (usableHostsForBlock < 2) {
-                // console.log(`VLSM Gen Attempt ${attempts}: hostBitsForReq=${hostBitsForReq} resulta en < 2 hosts usables.`);
-                continue; // Saltar si es /31 o /32
-            }
-
-            // Limitar el máximo de hosts usables a nuestro tope para ejercicios
+            if (usableHostsForBlock < 2) continue;
             const actualMaxHostsForReq = Math.min(usableHostsForBlock, maxHostsToRequestPerReq);
-            if (actualMaxHostsForReq < 2) {
-                // console.log(`VLSM Gen Attempt ${attempts}: El límite de ${maxHostsToRequestPerReq} hace que usableHosts (${actualMaxHostsForReq}) sea < 2.`);
-                continue; // Verificar si el tope lo hace inválido
-            }
-
-            // Generar hosts requeridos entre 2 y el máximo (posiblemente limitado)
-            const requiredHosts = getRandomInt(2, actualMaxHostsForReq); // Mínimo 2 hosts
-
-            // Calcular heurística de espacio (tamaño TOTAL del bloque necesario)
+            if (actualMaxHostsForReq < 2) continue;
+            const requiredHosts = getRandomInt(2, actualMaxHostsForReq);
             const hostBitsActuallyNeeded = bitsForHosts(requiredHosts);
-            if (hostBitsActuallyNeeded === -1 || hostBitsActuallyNeeded > maxHostBitsAvailable) {
-                // console.log(`VLSM Gen Attempt ${attempts}: Imposible obtener bits para ${requiredHosts} hosts o excede el bloque padre.`);
-                continue; // Imposible o más grande que el padre
-            }
+            if (hostBitsActuallyNeeded === -1 || hostBitsActuallyNeeded > maxHostBitsAvailable) continue;
             const blockSizeForReq = Math.pow(2, hostBitsActuallyNeeded);
             totalAddressesNeededHeuristic += blockSizeForReq;
-
-            requirements.push({
-                hosts: requiredHosts,
-                name: `Red ${String.fromCharCode(65 + i)}` // Red A, B, C...
-            });
+            requirements.push({ hosts: requiredHosts, name: `Red ${String.fromCharCode(65 + i)}` });
         }
-
-        // Validaciones post-generación de requisitos
-        if (requirements.length < Math.min(numRequirements, 2)) { // Asegurar al menos 2 reqs válidos si se pidieron >=2
-            // console.log(`VLSM Gen Attempt ${attempts}: No se generaron suficientes requisitos válidos (${requirements.length}).`);
-            continue;
-        }
-        if (totalAddressesNeededHeuristic > totalAvailableAddresses) {
-            // console.log(`VLSM Gen Attempt ${attempts}: Requisitos (${totalAddressesNeededHeuristic}) exceden bloque inicial (${totalAvailableAddresses}).`);
-            continue; // No caben según la heurística
-        }
-
-        // Ordenar requisitos (calculateVLSM también lo hace, pero es buena práctica)
+        if (requirements.length < Math.min(numRequirements, 2)) continue;
+        if (totalAddressesNeededHeuristic > totalAvailableAddresses) continue;
         requirements.sort((a, b) => b.hosts - a.hosts);
-
-        // Crear objeto del problema
-        const problem = {
-            network: startCIDR,
-            requirements: requirements
-        };
-
-        // 3. Calcular Solución y Validar
+        const problem = { network: startCIDR, requirements: requirements };
         const calculationResult = calculateVLSM(problem.network, problem.requirements);
-
-        // Si el cálculo fue exitoso Y se asignaron todas las redes pedidas
         if (calculationResult.success && calculationResult.data && calculationResult.data.length === requirements.length) {
              let problemText = `Subnetea en modo VLSM el bloque ${problem.network} para satisfacer los siguientes requisitos de hosts (ordenados de mayor a menor):\n`;
-             problem.requirements.forEach(req => {
-                 problemText += ` - ${req.name}: ${req.hosts} hosts\n`;
-             });
-
-            return {
-                problemStatement: problemText.trim(),
-                problemData: problem,
-                solution: calculationResult.data
-            };
+             problem.requirements.forEach(req => { problemText += ` - ${req.name}: ${req.hosts} hosts\n`; });
+            return { problemStatement: problemText.trim(), problemData: problem, solution: calculationResult.data };
         }
-        // Si falló, registrar (opcional) y continuar el bucle while
-        // console.log(`Intento ${attempts} fallido para VLSM: ${calculationResult.error || 'Resultado vacío o incompleto'}`);
-
-    } // fin while
-
+    }
     console.error("GENERATOR: No se pudo generar un problema VLSM válido después de varios intentos.");
-    return null; // Falló la generación
+    return null;
 }
 
 // --- Fin de exerciseGenerator.js ---
