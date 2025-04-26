@@ -252,7 +252,7 @@ button[type="submit"]:hover,
 button.reset-button,
 #resetClassfulBtn,
 #resetVlsmBtn {
-    background-color: #6c757d; /* Gris secundario */
+    background-color: #FFE4E1; /* Gris secundario */
     color: white;
     padding: 12px 20px; /* Mismo padding que otros botones */
     border: none;
