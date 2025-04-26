@@ -8,6 +8,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- REFERENCIAS A ELEMENTOS DEL DOM ---
+    // (Se mantienen las referencias anteriores)
     const btnCalculatorMode = document.getElementById('btnCalculatorMode');
     const btnExerciseMode = document.getElementById('btnExerciseMode');
     const calculatorModeSection = document.getElementById('calculatorMode');
@@ -42,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const showSolutionStepsBtn = document.getElementById('showSolutionSteps');
     const solutionStepsContentDiv = document.getElementById('solutionStepsContent');
     const yearSpan = document.getElementById('year');
+
+    // --- NUEVAS REFERENCIAS ---
+    const resetClassfulBtn = document.getElementById('resetClassfulBtn');
+    const resetVlsmBtn = document.getElementById('resetVlsmBtn');
+
 
     // --- ESTADO INTERNO ---
     let currentExerciseData = null; // Almacenará { problemData, solution }
@@ -80,13 +86,47 @@ document.addEventListener('DOMContentLoaded', () => {
             classfulForm.classList.remove('active');
             vlsmForm.classList.add('active');
         }
-        clearCalculatorResults();
+        clearCalculatorResults(); // Limpiar resultados al cambiar tipo
+        // Limpiar también los formularios al cambiar
+        resetClassfulFormInputs();
+        resetVlsmFormInputs();
     }
 
     /** Limpia el área de resultados de la calculadora */
     function clearCalculatorResults() {
         if(calcSummaryDiv) calcSummaryDiv.innerHTML = '';
         if(calcTableContainer) calcTableContainer.innerHTML = '<p>Introduce los datos y haz clic en calcular.</p>';
+        if(calcTableContainer) clearError(calcTableContainer); // Limpiar errores del área de resultados
+    }
+
+    /** Limpia específicamente los inputs del formulario Classful */
+    function resetClassfulFormInputs() {
+        if (classfulForm) classfulForm.reset(); // Método reset nativo para formularios
+        if (classfulNetworkIpInput) clearError(classfulNetworkIpInput);
+        if (classfulIpInfoSpan) classfulIpInfoSpan.textContent = '';
+        // Asegurar que el radio 'subnets' esté seleccionado por defecto
+        const reqSubnetsRadio = document.getElementById('reqSubnets');
+        if (reqSubnetsRadio) reqSubnetsRadio.checked = true;
+    }
+
+    /** Limpia específicamente los inputs del formulario VLSM */
+    function resetVlsmFormInputs() {
+        if (vlsmForm) vlsmForm.reset(); // Limpia inputs básicos como la IP
+        if (vlsmNetworkIpInput) clearError(vlsmNetworkIpInput);
+        // Eliminar todas las filas de requisitos excepto la primera
+        if (vlsmRequirementsContainer) {
+            const requirementRows = vlsmRequirementsContainer.querySelectorAll('.vlsm-requirement');
+            // Empezar desde el final para evitar problemas con índices cambiantes
+            for (let i = requirementRows.length - 1; i > 0; i--) {
+                requirementRows[i].remove();
+            }
+            // Limpiar la primera fila que queda
+            const firstRow = vlsmRequirementsContainer.querySelector('.vlsm-requirement');
+            if (firstRow) {
+                firstRow.querySelector('input[type="number"]').value = '';
+                firstRow.querySelector('input[type="text"]').value = '';
+            }
+        }
     }
 
     /** Limpia toda el área de ejercicios */
@@ -159,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Muestra resultados de la calculadora */
     function displayCalculatorResults(result) {
+        // (Sin cambios en esta función)
         clearCalculatorResults();
         if (!result.success) { displayError(calcTableContainer, `Error: ${result.error}`); return; }
         if (!result.data || result.data.length === 0) { calcTableContainer.innerHTML = '<p>No se generaron subredes...</p>'; return; }
@@ -169,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const commonMask = data[0].mask; const commonPrefix = data[0].prefix;
             const commonTotalHosts = data[0].totalHosts.toLocaleString(); const commonUsableHosts = data[0].usableHosts.toLocaleString();
             summaryHTML += `<br><span class="common-info">Máscara común: ${commonMask} (/${commonPrefix}) | Hosts Usables p/Subred: ${commonUsableHosts} (Total: ${commonTotalHosts})</span>`;
-            if (data.length > 1) { summaryHTML += `<br><small style='color: #6c757d;'><i>Las filas resaltadas representan 'Subnet Zero' y 'All-Ones Subnet', históricamente no utilizadas.</i></small>`; }
+            if (data.length > 1) { summaryHTML += `<br><small style='color: #6c757d;'><i>Las filas resaltadas representan 'Subnet Zero' y 'All-Ones Subnet'...</i></small>`; }
         }
         calcSummaryDiv.innerHTML = summaryHTML;
         let tableHTML = `<table><thead><tr><th>Nombre</th><th>Dir. Red</th>${isClassfulResult ? '' : '<th>Máscara</th><th>Prefijo</th>'}<th>Rango Usable</th><th>Broadcast</th>${isClassfulResult ? '' : '<th>Hosts Totales</th><th>Hosts Usables</th>'}${!isClassfulResult ? '<th>Hosts Pedidos</th>' : ''}</tr></thead><tbody>`;
@@ -187,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Muestra el problema del ejercicio */
     function displayExercise(exerciseData) {
+        // (Sin cambios en esta función)
         clearExerciseArea();
         if (!exerciseData || !exerciseData.problemStatement || !exerciseData.solution) {
             exercisePromptDiv.innerHTML = '<h3>Problema:</h3><p>Error al generar el ejercicio...</p>'; return;
@@ -200,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Genera tabla de entrada para el usuario */
     function generateUserInputTable(correctSolution) {
+        // (Sin cambios en esta función)
         if (!correctSolution || correctSolution.length === 0) { userAnswerTableContainer.innerHTML = '<p>Error: Solución no válida.</p>'; return; }
         let tableHTML = `<table><thead><tr><th>Nombre</th><th>Dir. Red</th><th>Máscara / Prefijo</th><th>Primer Host Usable</th><th>Último Host Usable</th><th>Broadcast</th></tr></thead><tbody>`;
         correctSolution.forEach((subnet, index) => {
@@ -212,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Obtiene respuestas del usuario */
     function getUserAnswers() {
+        // (Sin cambios en esta función)
         const userAnswers = [];
         const rows = userAnswerTableContainer.querySelectorAll('tbody tr');
         rows.forEach((row, index) => {
@@ -225,6 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Compara respuestas */
     function compareAnswers(userAnswers, correctSolution) {
+        // (Sin cambios en esta función)
         let isFullyCorrect = true; let feedback = ''; const errors = [];
         if (!correctSolution || userAnswers.length !== correctSolution.length) { return { correct: false, feedback: 'Error: El número de respuestas no coincide.', errors: [] }; }
         for (let i = 0; i < correctSolution.length; i++) {
@@ -246,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Muestra feedback y botón de solución */
     function displayFeedback(comparisonResult) {
+        // (Sin cambios en esta función)
         if (!exerciseFeedbackParagraph || !exerciseFeedbackDiv || !showSolutionBtn || !exerciseSolutionDiv || !solutionStepsContentDiv || !explanationControlsDiv) {
             console.error("Error: Faltan elementos de UI para mostrar feedback/solución.");
             return;
@@ -256,13 +302,14 @@ document.addEventListener('DOMContentLoaded', () => {
         else { exerciseFeedbackDiv.classList.add('incorrect'); highlightErrors(comparisonResult.errors); }
         exerciseFeedbackDiv.style.display = 'block';
         showSolutionBtn.style.display = 'inline-block';
-        exerciseSolutionDiv.style.display = 'none'; // Ocultar solución inicialmente
-        solutionStepsContentDiv.style.display = 'none'; // Ocultar pasos
-        explanationControlsDiv.style.display = 'none'; // Ocultar controles
+        exerciseSolutionDiv.style.display = 'none';
+        solutionStepsContentDiv.style.display = 'none';
+        explanationControlsDiv.style.display = 'none';
     }
 
     /** Resalta errores en inputs */
     function highlightErrors(errors) {
+        // (Sin cambios en esta función)
         if(!userAnswerTableContainer) return;
         userAnswerTableContainer.querySelectorAll('input').forEach(input => input.style.borderColor = '#ccc');
         errors.forEach(errorDetail => {
@@ -278,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Muestra tabla de solución y controles de explicación */
     function displaySolution(correctSolution) {
+        // (Sin cambios en esta función)
         if (!correctSolution) { solutionTableContainer.innerHTML = '<p>No hay solución disponible.</p>'; return; }
         if (!solutionTableContainer || !exerciseSolutionDiv || !explanationControlsDiv) {
              console.error("Error: Faltan elementos de UI para mostrar la solución.");
@@ -309,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {string} - Una cadena HTML con la explicación.
      */
     function generateExplanationSteps(problemData, solution, method) {
+        // (Función sin cambios respecto a la versión anterior con Magic Number corregido)
         let html = `<h4>Explicación (${method === 'magic' ? 'Magic Number' : 'Wildcard Conceptual'})</h4>`;
         if (!problemData || !solution || solution.length === 0) {
             return html + "<p>No hay datos suficientes para generar la explicación.</p>";
@@ -318,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (method === 'magic') {
                 if (isClassful) {
-                    // --- Magic Number para Classful (CORREGIDO) ---
                     const initialNetwork = problemData.network;
                     const requirement = problemData.requirement;
                     const firstSubnet = solution[0];
@@ -326,82 +374,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     const actualMask = firstSubnet.mask;
                     const defaultMask = getDefaultMask(initialNetwork);
                     const defaultPrefix = getPrefixLength(defaultMask);
-
                     if (defaultPrefix === null) throw new Error("No se pudo obtener el prefijo por defecto.");
-
                     const subnetBitsBorrowed = actualPrefix - defaultPrefix;
                     const numGeneratedSubnets = Math.pow(2, subnetBitsBorrowed);
-
-                    html += `<p><strong>1. Red Inicial y Requisito:</strong></p>
-                             <ul>
-                                <li>Red Base: <code>${initialNetwork}</code> (Clase ${getIpClass(initialNetwork)})</li>
-                                <li>Máscara por Defecto: <code>${defaultMask}</code> (/${defaultPrefix})</li>
-                                <li>Requisito: ${requirement.value} ${requirement.type === 'subnets' ? 'subredes utilizables' : 'hosts utilizables'}</li>
-                             </ul>`; // Ajustado texto requisito
-
-                    html += `<p><strong>2. Calcular Nueva Máscara/Prefijo (basado en la solución):</strong></p>
-                             <ul>`;
+                    html += `<p><strong>1. Red Inicial y Requisito:</strong></p><ul><li>Red Base: <code>${initialNetwork}</code> (Clase ${getIpClass(initialNetwork)})</li><li>Máscara por Defecto: <code>${defaultMask}</code> (/${defaultPrefix})</li><li>Requisito: ${requirement.value} ${requirement.type === 'subnets' ? 'subredes utilizables' : 'hosts utilizables'}</li></ul>`;
+                    html += `<p><strong>2. Calcular Nueva Máscara/Prefijo (basado en la solución):</strong></p><ul>`;
                     if (requirement.type === 'subnets') {
                         const strictlyNeededBits = bitsForSubnets(requirement.value);
-                        // Ajustar la lógica para considerar N+2 si se sigue la regla histórica implícita
                         const totalSubnetsNeeded = (subnetBitsBorrowed > 0 && numGeneratedSubnets >= 4) ? requirement.value + 2 : requirement.value;
                         const neededBitsForTotal = bitsForSubnets(totalSubnetsNeeded);
-
-                        if (subnetBitsBorrowed === neededBitsForTotal) {
-                             html += `<li>Para obtener ${requirement.value} subredes utilizables (considerando N+2 histórico si aplica), se necesitan ${subnetBitsBorrowed} bits de subred (2<sup>${subnetBitsBorrowed}</sup> = ${numGeneratedSubnets} totales).</li>`;
-                        } else {
-                            // Este caso podría indicar una inconsistencia, pero mostramos lo calculado
-                            html += `<li>Para satisfacer el requisito, se determinó que se necesitaban <strong>${subnetBitsBorrowed}</strong> bits de subred.</li>`;
-                            html += `<li>(Generando 2<sup>${subnetBitsBorrowed}</sup> = ${numGeneratedSubnets} subredes totales).</li>`;
-                        }
-                    } else { // hosts
+                        if (subnetBitsBorrowed === neededBitsForTotal) { html += `<li>Para obtener ${requirement.value} subredes utilizables (considerando N+2 histórico si aplica), se necesitan ${subnetBitsBorrowed} bits de subred (2<sup>${subnetBitsBorrowed}</sup> = ${numGeneratedSubnets} totales).</li>`; }
+                        else { html += `<li>Para satisfacer el requisito, se determinó que se necesitaban <strong>${subnetBitsBorrowed}</strong> bits de subred.</li>`; html += `<li>(Generando 2<sup>${subnetBitsBorrowed}</sup> = ${numGeneratedSubnets} subredes totales).</li>`; }
+                    } else {
                         const neededHostBits = 32 - actualPrefix;
                         html += `<li>Para alojar al menos ${requirement.value} hosts utilizables, se necesitan ${neededHostBits} bits de host (2<sup>${neededHostBits}</sup> = ${Math.pow(2, neededHostBits)} >= ${requirement.value} + 2).</li>`;
                         html += `<li>Esto requiere tomar prestados (32 - ${defaultPrefix} - ${neededHostBits}) = <strong>${subnetBitsBorrowed}</strong> bits para la subred.</li>`;
                     }
                     html += `<li>Nuevo Prefijo = Prefijo Default + Bits Prestados = ${defaultPrefix} + ${subnetBitsBorrowed} = <strong>${actualPrefix}</strong>.</li>`;
                     html += `<li>Nueva Máscara: <code>${actualMask}</code> (/${actualPrefix})</li></ul>`;
-
                     html += `<p><strong>3. Calcular el "Magic Number" (Salto o Tamaño de Bloque):</strong></p><ul>`;
                     const blockSize = getTotalHosts(actualPrefix);
                     html += `<li>El tamaño de cada bloque de subred es 2<sup>(32 - ${actualPrefix})</sup> = 2<sup>${32-actualPrefix}</sup> = <strong>${blockSize.toLocaleString()}</strong> direcciones.</li>`;
                     const maskOctets = actualMask.split('.').map(Number);
-                    let interestingOctetIndex = -1;
-                    let magicNumber = null;
-                    // Buscar el primer octeto < 255 de izquierda a derecha
-                    for (let i = 0; i < 4; i++) {
-                        if (maskOctets[i] < 255) {
-                            interestingOctetIndex = i;
-                            break;
-                        }
-                    }
+                    let interestingOctetIndex = -1; let magicNumber = null;
+                    for (let i = 0; i < 4; i++) { if (maskOctets[i] < 255) { interestingOctetIndex = i; break; } }
                     if (interestingOctetIndex !== -1 && actualPrefix < 31) {
                         magicNumber = 256 - maskOctets[interestingOctetIndex];
                         html += `<li>El octeto interesante (donde la máscara cambia) es el <strong>${interestingOctetIndex + 1}º</strong>.</li>`;
                         html += `<li>El "Magic Number" (incremento en ese octeto) es 256 - ${maskOctets[interestingOctetIndex]} = <strong>${magicNumber}</strong>.</li>`;
-                    } else if (actualPrefix >= 31) {
-                        html += `<li>Con prefijos /31 o /32, el concepto de Magic Number tradicional no aplica igual. El tamaño del bloque es ${blockSize}.</li>`;
-                    }
+                    } else if (actualPrefix >= 31) { html += `<li>Con prefijos /31 o /32, el concepto de Magic Number no aplica igual...</li>`; }
                     html += `</ul>`;
-
                     html += `<p><strong>4. Listar las Subredes Generadas (${numGeneratedSubnets} en total):</strong></p>`;
                     const baseNetworkForListing = getNetworkAddress(initialNetwork, defaultMask);
-                    html += `<p>Comenzando desde <code>${baseNetworkForListing}</code> y usando el Magic Number (${magicNumber !== null ? magicNumber : 'N/A'}) en el ${interestingOctetIndex !== -1 ? (interestingOctetIndex + 1) + 'º octeto' : 'octeto relevante'} (o sumando el tamaño de bloque ${blockSize.toLocaleString()}):</p><ul>`;
+                    html += `<p>Comenzando desde <code>${baseNetworkForListing}</code> y usando el Magic Number (${magicNumber !== null ? magicNumber : 'N/A'}) en el ${interestingOctetIndex !== -1 ? (interestingOctetIndex + 1) + 'º octeto' : 'octeto relevante'} (o sumando ${blockSize.toLocaleString()}):</p><ul>`;
                     solution.forEach((subnet, index) => {
                         let label = '';
-                        if (numGeneratedSubnets >= 2) { // Aplicar etiquetas si hay 2 o más
-                            if (index === 0) label = ' (Subnet Zero)';
-                            if (index === numGeneratedSubnets - 1) label = ' (All-Ones Subnet)';
-                        }
+                        if (numGeneratedSubnets >= 2) { if (index === 0) label = ' (Subnet Zero)'; if (index === numGeneratedSubnets - 1) label = ' (All-Ones Subnet)'; }
                         html += `<li>Subred ${index + 1}${label}: <code>${subnet.networkAddress}/${subnet.prefix}</code></li>`;
                     });
                     html += `</ul>`;
-                    if (numGeneratedSubnets >= 2) {
-                        html += `<p><small><i>Nota: Con la configuración moderna ('ip subnet-zero' en Cisco), todas estas ${numGeneratedSubnets} subredes son utilizables. Históricamente, la primera (Subnet Zero)${numGeneratedSubnets > 1 ? ' y la última (All-Ones)' : ''} a veces se descartaban.</i></small></p>`;
-                    }
-
+                    if (numGeneratedSubnets >= 2) { html += `<p><small><i>Nota: Modernamente todas son usables...</i></small></p>`; }
                 } else { // VLSM
-                    // ... (Lógica VLSM - sin cambios) ...
                     const initialCIDR = problemData.network; const requirements = problemData.requirements;
                     html += `<p><strong>1. Bloque Inicial:</strong> <code>${initialCIDR}</code></p>`;
                     html += `<p><strong>2. Asignación de Subredes:</strong></p><ol>`;
@@ -420,7 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     html += `</ol>`;
                 }
             } else if (method === 'wildcard') {
-                // ... (Lógica Wildcard - sin cambios) ...
                  html += `<p>La máscara wildcard es la inversa...</p>`;
                 if (isClassful) {
                      const firstSubnet = solution[0]; const newMask = firstSubnet.mask; const newPrefix = firstSubnet.prefix;
@@ -453,34 +465,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- ASIGNACIÓN DE EVENT LISTENERS ---
-
-    // Cambio de Modo
     if(btnCalculatorMode && btnExerciseMode) {
         btnCalculatorMode.addEventListener('click', () => switchMode('calculator'));
         btnExerciseMode.addEventListener('click', () => switchMode('exercise'));
     }
-
-    // Cambio de Tipo de Calculadora
     if(calcTypeRadios.length > 0) {
-        calcTypeRadios.forEach(radio => {
-            radio.addEventListener('change', (event) => {
-                switchCalculatorForm(event.target.value);
-            });
-        });
+        calcTypeRadios.forEach(radio => { radio.addEventListener('change', (event) => { switchCalculatorForm(event.target.value); }); });
     }
-
-     // Input de IP Classful
      if(classfulNetworkIpInput && classfulIpInfoSpan) {
          classfulNetworkIpInput.addEventListener('input', () => {
-             clearError(classfulNetworkIpInput);
-             const ip = classfulNetworkIpInput.value.trim(); let info = '';
-             if (isValidIp(ip)) {
-                const ipClass = getIpClass(ip); const defaultMask = getDefaultMask(ip);
+             clearError(classfulNetworkIpInput); const ip = classfulNetworkIpInput.value.trim(); let info = '';
+             if (isValidIp(ip)) { const ipClass = getIpClass(ip); const defaultMask = getDefaultMask(ip);
                 if(ipClass && defaultMask) info = `Clase ${ipClass}, Máscara Default: ${defaultMask}`;
-                else if (ipClass) info = `Clase ${ipClass} (Rango especial/no subnetable A/B/C)`;
-                else info = 'IP válida, pero clase no determinada.';
-             } else if (ip !== '') info = 'Escribiendo IP...';
-             classfulIpInfoSpan.textContent = info;
+                else if (ipClass) info = `Clase ${ipClass} (Rango especial)`; else info = 'IP válida'; }
+             else if (ip !== '') info = 'Escribiendo IP...'; classfulIpInfoSpan.textContent = info;
          });
          classfulNetworkIpInput.addEventListener('blur', () => {
              const ip = classfulNetworkIpInput.value.trim();
@@ -488,83 +486,79 @@ document.addEventListener('DOMContentLoaded', () => {
              else if (ip !== '') clearError(classfulNetworkIpInput);
          });
      }
-
-    // Submit Formulario Classful
     if(classfulForm) {
         classfulForm.addEventListener('submit', (event) => {
             event.preventDefault(); clearCalculatorResults(); clearError(calcTableContainer);
             const networkIp = classfulNetworkIpInput.value.trim();
             const selectedReqRadio = classfulForm.querySelector('input[name="classfulRequirement"]:checked');
-            if (!isValidIp(networkIp)) { displayError(calcTableContainer, 'La dirección IP de red no es válida.'); return; }
-            if (!selectedReqRadio) { displayError(calcTableContainer, 'Debes seleccionar un tipo de requisito.'); return; }
+            if (!isValidIp(networkIp)) { displayError(calcTableContainer, 'IP inválida.'); return; }
+            if (!selectedReqRadio) { displayError(calcTableContainer, 'Selecciona requisito.'); return; }
             const requirement = { type: selectedReqRadio.value };
             requirement.value = parseInt(requirement.type === 'subnets' ? numSubnetsInput.value : numHostsInput.value, 10);
-            if (isNaN(requirement.value) || requirement.value <= 0) { displayError(calcTableContainer, 'El valor del requisito debe ser un número positivo.'); return; }
+            if (isNaN(requirement.value) || requirement.value <= 0) { displayError(calcTableContainer, 'Valor de requisito inválido.'); return; }
             const result = calculateClassful(networkIp, requirement);
             displayCalculatorResults(result);
         });
     }
-
-    // Añadir/Quitar Requisitos VLSM
-    if(addVlsmRequirementBtn && vlsmRequirementsContainer) {
-        addVlsmRequirementBtn.addEventListener('click', addVlsmRequirementRow);
-        vlsmRequirementsContainer.addEventListener('click', (event) => {
-            if (event.target.classList.contains('remove-req')) {
-                removeVlsmRequirementRow(event.target);
-            }
+    // Botón Limpiar Classful
+    if(resetClassfulBtn) {
+        resetClassfulBtn.addEventListener('click', () => {
+            resetClassfulFormInputs();
+            clearCalculatorResults();
         });
     }
 
-    // Submit Formulario VLSM
+    if(addVlsmRequirementBtn && vlsmRequirementsContainer) {
+        addVlsmRequirementBtn.addEventListener('click', addVlsmRequirementRow);
+        vlsmRequirementsContainer.addEventListener('click', (event) => { if (event.target.classList.contains('remove-req')) { removeVlsmRequirementRow(event.target); } });
+    }
     if(vlsmForm) {
         vlsmForm.addEventListener('submit', (event) => {
             event.preventDefault(); clearCalculatorResults(); clearError(calcTableContainer);
             const networkIpWithPrefix = vlsmNetworkIpInput.value.trim();
             const initialNetworkInfo = parseIpAndPrefix(networkIpWithPrefix);
-            if (!initialNetworkInfo) { displayError(calcTableContainer, 'La red/prefijo inicial de VLSM no es válida (formato: x.x.x.x/yy).'); return; }
-            const requirements = [];
-            const requirementRows = vlsmRequirementsContainer.querySelectorAll('.vlsm-requirement');
+            if (!initialNetworkInfo) { displayError(calcTableContainer, 'Red/prefijo VLSM inválido.'); return; }
+            const requirements = []; const requirementRows = vlsmRequirementsContainer.querySelectorAll('.vlsm-requirement');
             let reqError = false;
             requirementRows.forEach((row, index) => {
                 const hostsInput = row.querySelector('input[type="number"]'); const nameInput = row.querySelector('input[type="text"]');
                 const hosts = parseInt(hostsInput.value, 10); const name = nameInput.value.trim() || null;
-                if (isNaN(hosts) || hosts < 0) { displayError(calcTableContainer, `Error en requisito #${index + 1}: Hosts debe ser número >= 0.`); reqError = true; }
+                if (isNaN(hosts) || hosts < 0) { displayError(calcTableContainer, `Error req #${index + 1}: Hosts inválidos.`); reqError = true; }
                  if (!reqError) requirements.push({ hosts, name });
             });
             if (reqError) return;
-            if (requirements.length === 0) { displayError(calcTableContainer, 'Debes añadir al menos un requisito de hosts.'); return; }
+            if (requirements.length === 0) { displayError(calcTableContainer, 'Añade requisitos.'); return; }
             requirements.sort((a, b) => b.hosts - a.hosts);
             const result = calculateVLSM(networkIpWithPrefix, requirements);
             displayCalculatorResults(result);
         });
     }
-
-    // --- Event Listeners Ejercicios ---
-
-    // Generar Ejercicio
-    if(generateExerciseBtn && exerciseTypeSelect) {
-        generateExerciseBtn.addEventListener('click', () => {
-            const type = exerciseTypeSelect.value;
-            let exerciseData = null;
-            if (type === 'classful') exerciseData = generateClassfulProblem();
-            else exerciseData = generateVLSMProblem();
-
-            if (exerciseData) displayExercise(exerciseData);
-            else exercisePromptDiv.innerHTML = '<h3>Problema:</h3><p>Error: No se pudo generar un ejercicio válido. Inténtalo de nuevo.</p>';
+     // Botón Limpiar VLSM
+    if(resetVlsmBtn) {
+        resetVlsmBtn.addEventListener('click', () => {
+            resetVlsmFormInputs();
+            clearCalculatorResults();
         });
     }
 
-    // Verificar Respuesta del Ejercicio
+    // --- Event Listeners Ejercicios ---
+    if(generateExerciseBtn && exerciseTypeSelect) {
+        generateExerciseBtn.addEventListener('click', () => {
+            const type = exerciseTypeSelect.value; let exerciseData = null;
+            if (type === 'classful') exerciseData = generateClassfulProblem();
+            else exerciseData = generateVLSMProblem();
+            if (exerciseData) displayExercise(exerciseData);
+            else exercisePromptDiv.innerHTML = '<h3>Problema:</h3><p>Error al generar ejercicio...</p>';
+        });
+    }
     if(checkAnswerBtn) {
         checkAnswerBtn.addEventListener('click', () => {
-            if (!currentExerciseData || !currentExerciseData.solution) { alert("Primero genera un ejercicio."); return; }
+            if (!currentExerciseData || !currentExerciseData.solution) { alert("Genera un ejercicio primero."); return; }
             const userAnswers = getUserAnswers();
             const comparisonResult = compareAnswers(userAnswers, currentExerciseData.solution);
             displayFeedback(comparisonResult);
         });
     }
-
-    // Botón "Mostrar Solución"
     if (showSolutionBtn) {
         showSolutionBtn.addEventListener('click', () => {
             if (currentExerciseData && currentExerciseData.solution) {
@@ -572,18 +566,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 showSolutionBtn.style.display = 'none';
             }
         });
-    } else {
-        console.error("Elemento #showSolutionBtn no encontrado en el HTML.");
-    }
-
-
-    // Botón "Mostrar Pasos"
+    } else { console.error("Elemento #showSolutionBtn no encontrado."); }
     if(showSolutionStepsBtn && exerciseExplanationMethodSelect && solutionStepsContentDiv) {
         showSolutionStepsBtn.addEventListener('click', () => {
             if (!currentExerciseData || !currentExerciseData.problemData || !currentExerciseData.solution) {
-                solutionStepsContentDiv.innerHTML = '<p>Error: No hay datos del problema o solución disponibles...</p>';
-                solutionStepsContentDiv.style.display = 'block';
-                return;
+                solutionStepsContentDiv.innerHTML = '<p>Error: No hay datos disponibles...</p>';
+                solutionStepsContentDiv.style.display = 'block'; return;
             }
             const method = exerciseExplanationMethodSelect.value;
             try {
@@ -592,17 +580,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 solutionStepsContentDiv.style.display = 'block';
             } catch (error) {
                  console.error("ERROR al mostrar pasos:", error);
-                 solutionStepsContentDiv.innerHTML = `<p style="color: red;"><strong>Ocurrió un error al intentar mostrar los pasos.</strong></p>`;
+                 solutionStepsContentDiv.innerHTML = `<p style="color: red;"><strong>Ocurrió un error...</strong></p>`;
                  solutionStepsContentDiv.style.display = 'block';
             }
         });
-    } else {
-         console.error("Faltan elementos para la funcionalidad 'Mostrar Pasos' (#showSolutionStepsBtn, #exerciseExplanationMethod, #solutionStepsContentDiv).");
-    }
+    } else { console.error("Faltan elementos para 'Mostrar Pasos'."); }
 
     // --- INICIALIZACIÓN ---
     updateFooterYear();
-    switchMode('calculator'); // Iniciar en modo calculadora
-    switchCalculatorForm('vlsm'); // Mostrar formulario VLSM por defecto
+    switchMode('calculator');
+    switchCalculatorForm('vlsm');
 
 }); // Fin de DOMContentLoaded
