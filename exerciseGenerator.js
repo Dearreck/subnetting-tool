@@ -75,8 +75,10 @@ function generateClassfulProblem(difficulty = 'medium') {
             const maxUsableSubnetsPossible = numGeneratedSubnets - 2;
 
             // Generar el valor del requisito (subredes UTILIZABLES a pedir)
-            // Pedir entre 1 y el máximo de usables posible con esos bits
-            requirementValue = getRandomInt(1, maxUsableSubnetsPossible);
+            // Pedir entre 2 y el máximo de usables posible con esos bits
+            const minUsableSubnetsToRequest = 2;
+            if (maxUsableSubnetsPossible < minUsableSubnetsToRequest) continue; // Si no podemos ni pedir 2 usables
+            requirementValue = getRandomInt(minUsableSubnetsToRequest, maxUsableSubnetsPossible);
             subnetBitsBorrowed = subnetBitsToUse; // Guardar los bits usados
 
         } else { // requirementType === 'hosts'
