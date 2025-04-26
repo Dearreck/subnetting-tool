@@ -89,10 +89,18 @@ main {
     margin-right: 15px;
     font-weight: bold;
 }
+/* Estilos generales para select y button en las opciones de ejercicio */
 .exercise-options select, .exercise-options button {
     margin-left: 10px;
-    padding: 5px 10px; /* Padding más pequeño para botones de opciones */
-    font-size: 0.95em; /* Fuente ligeramente más pequeña */
+    padding: 5px 10px;
+    font-size: 0.95em;
+    border: 1px solid #ccc; /* Añadir borde a select */
+    border-radius: 4px; /* Añadir borde redondeado a select */
+    vertical-align: middle; /* Alinear mejor */
+}
+.exercise-options button {
+     border: none; /* Quitar borde heredado para el botón */
+     cursor: pointer;
 }
 
 
@@ -122,6 +130,7 @@ main {
     color: #555;
 }
 
+/* Estilos base para inputs y selects en formularios */
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group select {
@@ -131,10 +140,25 @@ main {
     border-radius: 4px;
     font-size: 1em;
     max-width: 350px; /* Limitar ancho */
+    box-sizing: border-box; /* Incluir padding/border */
 }
 .form-group input[type="number"]{
      max-width: 120px;
 }
+/* Estilos específicos para selects para mejorar apariencia */
+.form-group select {
+    appearance: none; /* Quitar apariencia nativa */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #ffffff; /* Fondo blanco */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); /* Flecha SVG azul */
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px 10px;
+    padding-right: 30px; /* Espacio para la flecha */
+    cursor: pointer;
+}
+
 
 .form-group .ip-info {
     font-size: 0.85em;
@@ -196,7 +220,7 @@ button[type="submit"],
 #checkAnswer,
 #generateExercise,
 #showSolutionSteps,
-#showSolutionBtn { /* <--- AÑADIDO #showSolutionBtn AQUÍ */
+#showSolutionBtn {
     background-color: #007bff;
     color: white;
     padding: 12px 20px;
@@ -213,7 +237,7 @@ button[type="submit"]:hover,
 #checkAnswer:hover,
 #generateExercise:hover,
 #showSolutionSteps:hover,
-#showSolutionBtn:hover { /* <--- AÑADIDO #showSolutionBtn:hover AQUÍ */
+#showSolutionBtn:hover {
     background-color: #0056b3;
 }
 
@@ -245,7 +269,6 @@ button[type="submit"]:hover,
 
 #calcSummary {
     margin-bottom: 1.5rem; /* Más espacio debajo del resumen */
-    /* Quitar font-weight bold para que lo maneje .common-info */
 }
 
 
@@ -364,13 +387,20 @@ tr.subnet-zero-or-all-ones {
     margin-right: 5px;
     font-weight: normal; /* No tan fuerte como otras labels */
 }
-.explanation-controls select {
-    padding: 6px 10px; /* Ajustar padding */
-    font-size: 0.95em;
+/* Estilos específicos para el SELECT dentro de los controles de explicación */
+.explanation-controls select#exerciseExplanationMethod {
+    /* Hereda estilos base de .form-group select */
+    padding: 8px 30px 8px 12px; /* Ajustar padding vertical y derecho para flecha */
+    font-size: 1em; /* Ajustar tamaño de fuente si es necesario */
     max-width: 200px; /* Limitar ancho del select */
+    height: auto; /* Permitir que el padding defina la altura */
+    line-height: normal; /* Asegurar altura de línea normal */
+    vertical-align: middle; /* Alinear con el botón */
+    cursor: pointer;
 }
-.explanation-controls button {
-    padding: 6px 15px; /* Padding más pequeño para este botón */
+/* Estilo específico para el botón Mostrar Pasos en este contenedor */
+.explanation-controls button#showSolutionSteps {
+    padding: 8px 15px; /* Padding ligeramente menor para que coincida altura con select */
     font-size: 1em; /* Tamaño de fuente normal */
 }
 
