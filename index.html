@@ -104,14 +104,7 @@
                 <h3>Tu Solución:</h3>
                 <p>Completa los detalles para cada subred requerida:</p>
                 <div id="userAnswerTableContainer">
-                    </div>
-                 <div class="form-group" style="margin-top: 15px;">
-                    <label for="exerciseExplanationMethod">Método preferido para la explicación:</label>
-                    <select id="exerciseExplanationMethod">
-                        <option value="magic">Magic Number</option>
-                        <option value="wildcard">Wildcard (Conceptual)</option>
-                    </select>
-                 </div>
+                </div>
                 <button id="checkAnswer">Verificar Respuesta</button>
             </div>
 
@@ -124,9 +117,20 @@
                 <h3>Solución Detallada:</h3>
                  <div id="solutionExplanation"></div>
                 <div id="solutionTableContainer">
+                </div>
+                <div class="explanation-controls" style="margin-top: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div class="form-group" style="margin-bottom: 0;"> {/* Quitar margen inferior del form-group */}
+                        <label for="exerciseExplanationMethod" style="margin-right: 5px; margin-bottom: 0;">Método de Explicación:</label>
+                        <select id="exerciseExplanationMethod" style="padding: 5px 8px;"> {/* Ajustar padding si es necesario */}
+                            <option value="magic">Magic Number</option>
+                            <option value="wildcard">Wildcard (Conceptual)</option>
+                        </select>
                     </div>
-                 <button id="showSolutionSteps" style="margin-top: 10px;">Mostrar Pasos (Método Seleccionado)</button>
-                 <div id="solutionStepsContent" style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;"></div>
+                <button id="showSolutionSteps">Mostrar Pasos</button>
+                </div>
+            <div id="solutionStepsContent" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; background-color: #f8f9fa; border-radius: 4px; padding: 15px; display: none;">
+                {/* Los pasos generados aparecerán aquí */}
+            </div>
             </div>
 
         </section>
