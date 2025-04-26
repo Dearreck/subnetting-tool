@@ -534,48 +534,79 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (method === 'magic') {
             if (isClassful) {
-                const initialNetwork = problemData.network;
-                const requirement = problemData.requirement;
-                const firstSubnet = solution[0];
-                const newPrefix = firstSubnet.prefix;
-                const newMask = firstSubnet.mask;
-                const defaultMask = getDefaultMask(initialNetwork);
-                const defaultPrefix = getPrefixLength(defaultMask);
-                const subnetBitsBorrowed = newPrefix - defaultPrefix;
+                // --- Magic Number para Classful (CORREGIDO) ---
+                const initialNetwork = problemData.network; // La red original del problema
+                const requirement = problemData.requirement; // El requisito {type, value}
+                const firstSubnet = solution[0]; // Tomar datos de la primera subred generada
+                const actualPrefix = firstSubnet.prefix; // El prefijo REAL usado en la solución
+                const actualMask = firstSubnet.mask; // La máscara REAL usada
+                const defaultMask = getDefaultMask(initialNetwork); // Máscara por defecto de la clase
+                const defaultPrefix = getPrefixLength(defaultMask); // Prefijo por defecto
+
+                // Calcular los bits que REALMENTE se tomaron prestados
+                const subnetBitsBorrowed = actualPrefix - defaultPrefix;
+                // Calcular cuántas subredes se generaron TOTALMENTE con esos bits
+                const numGeneratedSubnets = Math.pow(2, subnetBitsBorrowed);
+
                 html += `<p><strong>1. Red Inicial y Requisito:</strong></p>
                          <ul>
                             <li>Red Base: <code>${initialNetwork}</code> (Clase ${getIpClass(initialNetwork)})</li>
                             <li>Máscara por Defecto: <code>${defaultMask}</code> (/${defaultPrefix})</li>
                             <li>Requisito: ${requirement.value} ${requirement.type === 'subnets' ? 'subredes' : 'hosts utilizables'}</li>
                          </ul>`;
-                html += `<p><strong>2. Calcular Nueva Máscara/Prefijo:</strong></p>
+
+                html += `<p><strong>2. Calcular Nueva Máscara/Prefijo (basado en la solución):</strong></p>
                          <ul>`;
                 if (requirement.type === 'subnets') {
-                    const neededBits = bitsForSubnets(requirement.value);
-                    html += `<li>Para ${requirement.value} subredes, se necesitan ${neededBits} bits de subred (2<sup>${neededBits}</sup> = ${Math.pow(2, neededBits)} >= ${requirement.value}).</li>`;
-                    html += `<li>Nuevo Prefijo = Prefijo Default + Bits Necesarios = ${defaultPrefix} + ${neededBits} = <strong>${newPrefix}</strong>.</li>`;
-                } else {
-                    const neededBits = bitsForHosts(requirement.value);
-                    html += `<li>Para ${requirement.value} hosts utilizables, se necesitan ${neededBits} bits de host (2<sup>${neededBits}</sup> = ${Math.pow(2, neededBits)} >= ${requirement.value} + 2).</li>`;
-                    html += `<li>Nuevo Prefijo = 32 - Bits de Host Necesarios = 32 - ${neededBits} = <strong>${newPrefix}</strong>.</li>`;
+                    // Explicar por qué se usaron 'subnetBitsBorrowed'
+                    html += `<li>Para satisfacer el requisito de ${requirement.value} subredes`;
+                    // Añadir nota sobre posible cálculo N+2 si se usaron más bits de los estrictamente necesarios
+                    const strictlyNeededBits = bitsForSubnets(requirement.value);
+                    if (subnetBitsBorrowed > strictlyNeededBits) {
+                        html += ` (y considerando espacio para redes 'zero' y 'all-ones' si se aplicara la regla histórica, necesitando al menos ${requirement.value + 2} teóricas),`;
+                    } else {
+                        html += `,`;
+                    }
+                    html += ` se tomaron prestados <strong>${subnetBitsBorrowed}</strong> bits de la porción de host.</li>`;
+                    html += `<li>(Cálculo: 2<sup>${subnetBitsBorrowed}</sup> = ${numGeneratedSubnets} subredes totales generadas)</li>`;
+
+                } else { // hosts
+                    const neededHostBits = 32 - actualPrefix; // Bits de host que quedaron
+                    html += `<li>Para alojar al menos ${requirement.value} hosts utilizables, se necesitan ${neededHostBits} bits de host (2<sup>${neededHostBits}</sup> = ${Math.pow(2, neededHostBits)} >= ${requirement.value} + 2).</li>`;
+                    html += `<li>Esto requiere tomar prestados (32 - ${defaultPrefix} - ${neededHostBits}) = <strong>${subnetBitsBorrowed}</strong> bits para la subred.</li>`;
                 }
-                html += `<li>Nueva Máscara: <code>${newMask}</code> (/${newPrefix})</li></ul>`;
-                 html += `<p><strong>3. Calcular el "Magic Number" (Salto o Tamaño de Bloque):</strong></p><ul>`;
-                 const blockSize = getTotalHosts(newPrefix);
-                 html += `<li>El tamaño de cada bloque de subred es 2<sup>(32 - ${newPrefix})</sup> = 2<sup>${32-newPrefix}</sup> = <strong>${blockSize.toLocaleString()}</strong> direcciones.</li>`;
-                 const maskOctets = newMask.split('.').map(Number);
+                html += `<li>Nuevo Prefijo = Prefijo Default + Bits Prestados = ${defaultPrefix} + ${subnetBitsBorrowed} = <strong>${actualPrefix}</strong>.</li>`;
+                html += `<li>Nueva Máscara: <code>${actualMask}</code> (/${actualPrefix})</li>
+                         </ul>`;
+
+                 html += `<p><strong>3. Calcular el "Magic Number" (Salto o Tamaño de Bloque):</strong></p>
+                          <ul>`;
+                 const blockSize = getTotalHosts(actualPrefix); // Usar el prefijo REAL
+                 html += `<li>El tamaño de cada bloque de subred es 2<sup>(32 - ${actualPrefix})</sup> = 2<sup>${32-actualPrefix}</sup> = <strong>${blockSize.toLocaleString()}</strong> direcciones.</li>`;
+                 const maskOctets = actualMask.split('.').map(Number);
                  let interestingOctetIndex = -1;
                  for(let i = 3; i >= 0; i--) { if (maskOctets[i] < 255) { interestingOctetIndex = i; break; } }
                  if (interestingOctetIndex !== -1) {
                      const magicNumber = 256 - maskOctets[interestingOctetIndex];
-                     html += `<li>El "Magic Number" en el ${interestingOctetIndex + 1}º octeto es 256 - ${maskOctets[interestingOctetIndex]} = <strong>${magicNumber}</strong>.</li>`;
+                     html += `<li>El "Magic Number" (incremento) en el <strong>${interestingOctetIndex + 1}º octeto</strong> es 256 - ${maskOctets[interestingOctetIndex]} = <strong>${magicNumber}</strong>.</li>`;
                  } else { html += `<li>La máscara es /32.</li>`; }
                  html += `</ul>`;
-                 html += `<p><strong>4. Listar las Subredes:</strong></p>
-                          <p>Comenzando desde <code>${getNetworkAddress(initialNetwork, defaultMask)}</code> y sumando el tamaño del bloque o usando el Magic Number:</p><ul>`;
-                 solution.forEach((subnet, index) => { html += `<li>Subred ${index + 1}: <code>${subnet.networkAddress}/${subnet.prefix}</code></li>`; });
+
+                 html += `<p><strong>4. Listar las Subredes Generadas (${numGeneratedSubnets} en total):</strong></p>
+                          <p>Comenzando desde <code>${getNetworkAddress(initialNetwork, defaultMask)}</code> y usando el Magic Number (${magicNumber}) en el ${interestingOctetIndex + 1}º octeto (o sumando el tamaño de bloque ${blockSize}):</p>
+                          <ul>`;
+                 // Listar TODAS las subredes de la solución
+                 solution.forEach((subnet, index) => {
+                     html += `<li>Subred ${index + 1}: <code>${subnet.networkAddress}/${subnet.prefix}</code></li>`;
+                 });
                  html += `</ul>`;
+                 // Añadir nota final sobre usabilidad
+                 if (solution.length > 1) { // Solo si hay más de una subred
+                     html += `<p><small><i>Nota: Con la configuración moderna ('ip subnet-zero' en Cisco), todas estas ${numGeneratedSubnets} subredes son utilizables. Históricamente, la primera (Subnet Zero) y la última (All-Ones) a veces se descartaban.</i></small></p>`;
+                 }
+
             } else { // VLSM
+                // ... La lógica para VLSM no necesita cambios aquí ...
                 const initialCIDR = problemData.network;
                 const requirements = problemData.requirements;
                 html += `<p><strong>1. Bloque Inicial:</strong> <code>${initialCIDR}</code></p>`;
