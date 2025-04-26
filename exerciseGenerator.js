@@ -20,19 +20,22 @@ function getRandomInt(min, max) {
     if (min === max) {
         return min;
     }
+    // Asegurar que max es al menos min antes de calcular el rango
+    if (max < min) max = min;
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /**
  * Genera un problema de subneteo Classful aleatorio.
  * Limita la solicitud máxima de subredes a ~25 y el número MÁXIMO de subredes RESULTANTES a 25.
+ * EVITA generar problemas donde el subneteo resulte ÚNICAMENTE en la subred zero y all-ones.
  *
- * @param {string} difficulty - Nivel de dificultad ('easy', 'medium', 'hard'). Actualmente no implementado, se usa un comportamiento medio.
+ * @param {string} difficulty - Nivel de dificultad ('easy', 'medium', 'hard'). Actualmente no implementado.
  * @returns {{problemStatement: string, problemData: object, solution: object[]}|null} - Objeto con el enunciado, datos crudos del problema y la solución, o null si falla la generación.
  */
 function generateClassfulProblem(difficulty = 'medium') {
     let attempts = 0;
-    const maxAttempts = 20; // Aumentar intentos por la nueva validación
+    const maxAttempts = 25; // Aumentar intentos por las validaciones
     const maxResultingSubnets = 25; // Límite de subredes que se mostrarán
 
     while (attempts < maxAttempts) {
@@ -60,9 +63,15 @@ function generateClassfulProblem(difficulty = 'medium') {
 
         // Obtener dirección de red real y máscara por defecto
         const defaultMask = getDefaultMask(baseIp);
-         if (!defaultMask) continue;
+         if (!defaultMask) {
+             // console.log(`Classful Gen Attempt ${attempts}: No se pudo obtener máscara default para ${baseIp}`);
+             continue;
+         }
         const networkAddress = getNetworkAddress(baseIp, defaultMask);
-        if (!networkAddress) continue;
+        if (!networkAddress) {
+            // console.log(`Classful Gen Attempt ${attempts}: No se pudo obtener red base para ${baseIp}/${defaultPrefix}`);
+            continue;
+        }
 
         // 2. Generar Requisito Aleatorio (Subredes o Hosts)
         const requirementType = Math.random() < 0.5 ? 'subnets' : 'hosts';
@@ -75,7 +84,10 @@ function generateClassfulProblem(difficulty = 'medium') {
 
             const maxBitsToBorrowForExercise = Math.min(availableSubnetBits, neededBitsForMaxRequest);
 
-            if (maxBitsToBorrowForExercise < 1) continue;
+            if (maxBitsToBorrowForExercise < 1) {
+                // console.log(`Classful Gen Attempt ${attempts}: No hay suficientes bits disponibles en /${defaultPrefix} para crear >= 2 subredes (max ${maxResultingSubnets}).`);
+                continue;
+            }
 
             const subnetBitsToUse = getRandomInt(1, maxBitsToBorrowForExercise);
             const maxSubnetsPossibleWithBits = Math.pow(2, subnetBitsToUse);
@@ -88,12 +100,16 @@ function generateClassfulProblem(difficulty = 'medium') {
         } else { // requirementType === 'hosts'
             // --- Lógica para requisitos de hosts ---
             const availableHostBits = 32 - defaultPrefix;
-            if (availableHostBits <= 2) continue;
-
+            if (availableHostBits <= 2) {
+                 // console.log(`Classful Gen Attempt ${attempts}: No hay suficientes bits de host en /${defaultPrefix} para subnetear y tener hosts usables.`);
+                 continue;
+            }
             const hostBitsToUse = getRandomInt(2, availableHostBits - 1);
             const maxHostsForBits = getUsableHosts(32 - hostBitsToUse);
-            if (maxHostsForBits < 2) continue;
-
+            if (maxHostsForBits < 2) {
+                // console.log(`Classful Gen Attempt ${attempts}: Los bits de host elegidos (${hostBitsToUse}) no permiten >= 2 hosts usables.`);
+                continue;
+            }
             requirementValue = getRandomInt(2, maxHostsForBits); // Mínimo 2 hosts
         }
 
@@ -109,30 +125,30 @@ function generateClassfulProblem(difficulty = 'medium') {
             }
         };
 
-        // --- VALIDACIÓN ADICIONAL: Limitar subredes RESULTANTES ---
+        // --- VALIDACIONES ADICIONALES ---
+        // Calcular prefijo resultante
         let resultingPrefix;
         if (problem.requirement.type === 'subnets') {
             const neededSubnetBits = bitsForSubnets(problem.requirement.value);
-            if (neededSubnetBits === -1) continue; // Requisito imposible
+            if (neededSubnetBits === -1) continue;
             resultingPrefix = defaultPrefix + neededSubnetBits;
         } else { // type === 'hosts'
             const neededHostBits = bitsForHosts(problem.requirement.value);
-            if (neededHostBits === -1) continue; // Requisito imposible
+            if (neededHostBits === -1) continue;
             resultingPrefix = 32 - neededHostBits;
         }
 
-        // Validar si el prefijo resultante es válido y no menor que el default
+        // Validar prefijo resultante
         if (resultingPrefix < defaultPrefix || resultingPrefix > 32) {
-             // console.log(`Classful Gen Attempt ${attempts}: Prefijo resultante inválido (${resultingPrefix})`);
+            // console.log(`Classful Gen Attempt ${attempts}: Prefijo resultante inválido (${resultingPrefix})`);
             continue;
         }
-        // Validar si el prefijo es /31 o /32 cuando se pidieron hosts > 0
         if (problem.requirement.type === 'hosts' && problem.requirement.value > 0 && resultingPrefix > 30) {
              // console.log(`Classful Gen Attempt ${attempts}: Prefijo resultante ${resultingPrefix} no permite hosts usables.`);
              continue;
         }
 
-        // Calcular cuántas subredes se generarían con este prefijo
+        // Calcular subredes generadas
         const subnetBitsBorrowed = resultingPrefix - defaultPrefix;
         if (subnetBitsBorrowed < 0) continue; // Seguridad
         const numGeneratedSubnets = Math.pow(2, subnetBitsBorrowed);
@@ -140,15 +156,21 @@ function generateClassfulProblem(difficulty = 'medium') {
         // ¡LA COMPROBACIÓN CLAVE! Limitar el número de subredes que RESULTARÍAN
         if (numGeneratedSubnets > maxResultingSubnets) {
             // console.log(`Classful Gen Attempt ${attempts}: Se generarían ${numGeneratedSubnets} subredes (límite ${maxResultingSubnets}). Regenerando.`);
-            continue; // Demasiadas subredes resultantes, intentar de nuevo
+            continue;
         }
-        // --- FIN VALIDACIÓN ADICIONAL ---
+        // *** NUEVA VALIDACIÓN: Evitar caso problemático de solo 2 subredes ***
+        // Solo aplica si realmente se tomaron bits prestados (subnetBitsBorrowed > 0)
+        if (subnetBitsBorrowed > 0 && numGeneratedSubnets === 2) {
+            // console.log(`Classful Gen Attempt ${attempts}: Evitando caso de solo 2 subredes (zero/all-ones).`);
+            continue; // Generar otro problema
+        }
+        // --- FIN VALIDACIONES ADICIONALES ---
 
 
-        // 3. Calcular Solución y Validar (Solo si pasó la validación anterior)
+        // 3. Calcular Solución y Validar (Solo si pasó las validaciones anteriores)
         const calculationResult = calculateClassful(problem.network, problem.requirement);
 
-        // Si el cálculo fue exitoso, es un problema válido
+        // Si el cálculo fue exitoso y produjo datos
         if (calculationResult.success && calculationResult.data && calculationResult.data.length > 0) {
             // Formatear el problema para el usuario
             let problemText = `Subnetea la red ${problem.network} (Clase ${ipClass}, máscara por defecto ${defaultMask}) `;
@@ -158,10 +180,10 @@ function generateClassfulProblem(difficulty = 'medium') {
                  problemText += `de forma que cada subred pueda alojar al menos ${problem.requirement.value} hosts utilizables.`;
             }
 
-            // Asegurarse de que el número de subredes en la solución coincida (sanity check)
-            // Usar Math.max(1,...) porque si numGeneratedSubnets es 0 (caso /32), la solución tendrá 1 entrada.
-            if (calculationResult.data.length !== Math.max(1, numGeneratedSubnets)) {
-                 console.warn(`Classful Gen: Discrepancia - Generadas: ${numGeneratedSubnets}, Solución tiene: ${calculationResult.data.length}`);
+            // Sanity check: comparar número esperado vs real (manejar caso base sin subneteo)
+            const expectedNumSubnets = (subnetBitsBorrowed === 0) ? 1 : numGeneratedSubnets;
+            if (calculationResult.data.length !== expectedNumSubnets) {
+                 console.warn(`Classful Gen: Discrepancia - Esperadas: ${expectedNumSubnets}, Solución tiene: ${calculationResult.data.length}`);
                  // Podríamos decidir continuar o no aquí, por ahora continuaremos.
             }
 
