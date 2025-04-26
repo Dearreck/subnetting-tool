@@ -248,6 +248,29 @@ button[type="submit"]:hover,
     background-color: #0056b3;
 }
 
+/* --- ESTILOS PARA BOTONES DE RESET/LIMPIAR --- */
+button.reset-button,
+#resetClassfulBtn,
+#resetVlsmBtn {
+    background-color: #6c757d; /* Gris secundario */
+    color: white;
+    padding: 12px 20px; /* Mismo padding que otros botones */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em; /* Mismo tamaño de fuente */
+    transition: background-color 0.3s ease;
+    vertical-align: middle; /* Alinear con el botón de submit */
+    margin-left: 10px; /* Espacio respecto al botón anterior */
+}
+
+button.reset-button:hover,
+#resetClassfulBtn:hover,
+#resetVlsmBtn:hover {
+    background-color: #5a6268; /* Gris más oscuro al pasar el ratón */
+}
+
+
 .warning {
     background-color: #fff3cd;
     border: 1px solid #ffeeba;
@@ -402,18 +425,17 @@ tbody tr.subnet-zero-or-all-ones:nth-child(even) {
     font-weight: normal;
     color: #555;
 }
-/* --- ESTILOS MEJORADOS PARA EL SELECT DE EXPLICACIÓN --- */
+/* Estilos para el SELECT de explicación */
 .explanation-controls select#exerciseExplanationMethod {
-    /* Hereda estilos base de .form-group select */
-    padding: 8px 40px 8px 12px; /* Aumentar padding derecho para la flecha */
+    padding: 8px 40px 8px 12px;
     font-size: 1em;
     height: auto;
     line-height: 1.5;
     vertical-align: middle;
     cursor: pointer;
-    max-width: none;   /* Quitar ancho máximo */
-    width: auto;       /* Ancho automático basado en contenido */
-    min-width: 0;      /* Quitar ancho mínimo previo */
+    max-width: none;
+    width: auto;
+    min-width: 0;
     border-color: #007bff;
     border-width: 1px;
     background-color: rgba(255, 255, 255, 0.8);
@@ -421,16 +443,17 @@ tbody tr.subnet-zero-or-all-ones:nth-child(even) {
     -webkit-backdrop-filter: blur(2px);
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
     color: #333;
-    background-position: right 15px center; /* Ajustar posición flecha */
+    background-position: right 15px center;
     background-size: 10px 10px;
+    border-radius: 4px; /* Añadir borde redondeado */
 }
-/* Estilo focus específico para este select */
 .explanation-controls select#exerciseExplanationMethod:focus {
      border-color: #0056b3;
      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.35);
+     outline: none;
 }
 
-/* Estilo específico para el botón Mostrar Pasos en este contenedor */
+/* Estilo para el botón Mostrar Pasos */
 .explanation-controls button#showSolutionSteps {
     padding: 8px 15px;
     font-size: 1em;
